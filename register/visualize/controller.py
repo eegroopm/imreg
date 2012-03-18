@@ -8,21 +8,34 @@ from PyQt4 import QtCore, QtGui
 # View (only ever draws the model data and retransmits messages)
 #==============================================================================
 
-
-class dialog(object):
+class graphicsView(QtGui.QGraphicsView):
+    """
+    graphics view that can listen to events and pass up.
+    """
+    
+    def __init__(self, *args):
+        QtGui.QGraphicsView.__init__(self, *args)
+    
+    def mouseMoveEvent(self, event):
+        print event.pos()
+    
+    def wheelEvent(self, event):
+        print event.delta()
+    
+class dialog(QtCore.QObject):
 
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(648, 612)
         Dialog.setModal(False)
-
-        self.graphicsView = QtGui.QGraphicsView(Dialog)
+        
+        self.graphicsView = graphicsView(Dialog)
         self.graphicsView.setGeometry(QtCore.QRect(10, 10, 631, 591))
         self.graphicsView.setObjectName("graphicsView")
 
         self.scene = QtGui.QGraphicsScene()
         self.graphicsView.setScene(self.scene)
-
+        
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
 
