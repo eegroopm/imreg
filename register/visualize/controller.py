@@ -10,20 +10,25 @@ from PyQt4 import QtCore, QtGui
 
 class graphicsView(QtGui.QGraphicsView):
     """
-    graphics view that can listen to events and pass up.
+    Custom graphics view that can listen to events and pass up.
     """
+    
+    movement = QtCore.pyqtSignal(int, int, name='movement')
     
     def __init__(self, *args):
         QtGui.QGraphicsView.__init__(self, *args)
     
     def mouseMoveEvent(self, event):
-        print event.pos()
-    
+        self.movement.emit(event.pos().x(), event.pos().y())
+        
     def wheelEvent(self, event):
         print event.delta()
-    
-class dialog(QtCore.QObject):
 
+
+class dialog(QtCore.QObject):
+    """
+    Dialog is the "view"    """
+    
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(648, 612)
@@ -60,7 +65,7 @@ class dialog(QtCore.QObject):
 
 
 #==============================================================================
-# Model (data)
+# Model
 #==============================================================================
 
 class Model():
@@ -86,6 +91,13 @@ class Controller(QtGui.QDialog):
         self.view = dialog()
         self.view.setupUi(self)
 
+    # This is where the message needs to propagate to, the controller needs to
+    # know that something has happened in the view.
+    @QtCore.pyqtSlot(int, int, name='movement')
+    def movement(self, x, y):
+        print 'x', x, 'y', y
+        
+    
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     application = Controller()
