@@ -90,14 +90,16 @@ class Controller(QtGui.QDialog):
 
         self.view = dialog()
         self.view.setupUi(self)
+        
+        # Connect to messages.
+        self.view.graphicsView.movement.connect(self.movement)
 
     # This is where the message needs to propagate to, the controller needs to
     # know that something has happened in the view.
-    @QtCore.pyqtSlot(int, int, name='movement')
     def movement(self, x, y):
-        print 'x', x, 'y', y
-        
-    
+        print 'x : {}, y : {}'.format(x, y)
+
+
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     application = Controller()
