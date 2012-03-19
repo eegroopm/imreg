@@ -19,12 +19,15 @@ class graphicsView(QtGui.QGraphicsView):
         QtGui.QGraphicsView.__init__(self, *args)
     
     
-    
-    
     def mouseMoveEvent(self, event):
         point = self.mapToScene(event.pos())
         
+        # Shift and mouse press
+        if int(event.modifiers()) == QtCore.Qt.ShiftModifier:
+            self.centerOn(point.x(), point.y())
+            
         self.movement.emit(point.x(), point.y())
+        
         
     def wheelEvent(self, event):
         
@@ -37,7 +40,7 @@ class dialog(QtCore.QObject):
     """
     Dialog is the "view"    """
     
-    circle = QtGui.QGraphicsEllipseItem(10,10, 10, 10)
+    circle = QtGui.QGraphicsEllipseItem(10, 10, 10, 10)
     
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
@@ -54,9 +57,10 @@ class dialog(QtCore.QObject):
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
         
-        self.scene.addRect(
-            QtCore.QRectF(10, 10, 100, 100),
-            pen=QtGui.QPen()
+        self.circle.setPen(QtGui.QPen(QtGui.QColor("red")))
+        
+        self.scene.addPixmap(
+            QtGui.QPixmap("africa-map1.jpg")
             )
         
         self.scene.addItem(self.circle)
@@ -111,10 +115,6 @@ class Controller(QtGui.QDialog):
     # This is where the message needs to propagate to, the controller needs to
     # know that something has happened in the view.
     def movement(self, x, y):
-        
-        # Update the model.
-        print 'x : {}, y : {}'.format(x, y)
-        
         # Tell the view to draw.
         self.view.draw((x, y))
 
