@@ -19,7 +19,9 @@ class graphicsView(QtGui.QGraphicsView):
         QtGui.QGraphicsView.__init__(self, *args)
     
     def mouseMoveEvent(self, event):
-        self.movement.emit(event.pos().x(), event.pos().y())
+        point = self.mapToScene(event.pos())
+        
+        self.movement.emit(point.x(), point.y())
         
     def wheelEvent(self, event):
         print event.delta()
@@ -28,6 +30,8 @@ class graphicsView(QtGui.QGraphicsView):
 class dialog(QtCore.QObject):
     """
     Dialog is the "view"    """
+    
+    circle = QtGui.QGraphicsEllipseItem(10,10, 10, 10)
     
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
@@ -43,7 +47,15 @@ class dialog(QtCore.QObject):
         
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
-
+        
+        self.scene.addRect(
+            QtCore.QRectF(10, 10, 100, 100),
+            pen=QtGui.QPen()
+            )
+        
+        self.scene.addItem(self.circle)
+        
+        
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(
             QtGui.QApplication.translate(
@@ -54,16 +66,12 @@ class dialog(QtCore.QObject):
                 )
             )
 
-    def draw(self, model):
+    def draw(self, (x, y)):
         """
         Views a model as a point.
         """
-        self.scene.addRect(
-            QtCore.QRect(model.x, model.y, 10, 10),
-            pen=QtGui.QPen()
-            )
-
-
+        self.circle.setRect(x, y, 10, 10)
+        
 #==============================================================================
 # Model
 #==============================================================================
@@ -98,7 +106,7 @@ class Controller(QtGui.QDialog):
     # know that something has happened in the view.
     def movement(self, x, y):
         print 'x : {}, y : {}'.format(x, y)
-
+        self.view.draw((x, y))
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
