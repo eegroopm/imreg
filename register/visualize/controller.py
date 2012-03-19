@@ -18,14 +18,20 @@ class graphicsView(QtGui.QGraphicsView):
     def __init__(self, *args):
         QtGui.QGraphicsView.__init__(self, *args)
     
+    
+    
+    
     def mouseMoveEvent(self, event):
         point = self.mapToScene(event.pos())
         
         self.movement.emit(point.x(), point.y())
         
     def wheelEvent(self, event):
-        print event.delta()
-
+        
+        factor = 1.41 ** (event.delta() / 240.0)
+        
+        self.scale(factor, factor)
+        
 
 class dialog(QtCore.QObject):
     """
@@ -105,7 +111,11 @@ class Controller(QtGui.QDialog):
     # This is where the message needs to propagate to, the controller needs to
     # know that something has happened in the view.
     def movement(self, x, y):
+        
+        # Update the model.
         print 'x : {}, y : {}'.format(x, y)
+        
+        # Tell the view to draw.
         self.view.draw((x, y))
 
 if __name__ == "__main__":
