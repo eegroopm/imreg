@@ -99,6 +99,12 @@ class dialog(QtCore.QObject):
 
             elipse = QtGui.QGraphicsEllipseItem(entry.x, entry.y, 5, 5)
             elipse.setPen(QtGui.QPen(QtGui.QColor("red")))
+            elipse.setBrush(
+                QtGui.QBrush(
+                    QtGui.QColor(128, 128, 128, alpha=128),
+                    QtCore.Qt.SolidPattern
+                    )
+                )
             elipse.setToolTip(
                 QtCore.QString('({},{})'.format(entry.x, entry.y))
                 )
