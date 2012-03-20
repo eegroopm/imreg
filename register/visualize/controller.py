@@ -4,6 +4,8 @@ import sys
 
 from PyQt4 import QtCore, QtGui
 
+import shapely.geometry as geometry
+
 #==============================================================================
 # View (only ever draws the model data and retransmits messages)
 #==============================================================================
@@ -14,38 +16,45 @@ class graphicsView(QtGui.QGraphicsView):
     """
     
     movement = QtCore.pyqtSignal(int, int, name='movement')
+    click = QtCore.pyqtSignal(int, int, name='click')
+    shiftclick = QtCore.pyqtSignal(int, int, name='shiftclick')
     
     def __init__(self, *args):
         QtGui.QGraphicsView.__init__(self, *args)
-    
+        
+        self.setMouseTracking(True)
     
     def mouseMoveEvent(self, event):
         point = self.mapToScene(event.pos())
-        
-        # Shift and mouse press
-        if int(event.modifiers()) == QtCore.Qt.ShiftModifier:
-            self.centerOn(point.x(), point.y())
-            
         self.movement.emit(point.x(), point.y())
+    
+    def mousePressEvent(self, event):
+        point = self.mapToScene(event.pos())
         
-        
+        if int(event.modifiers()) == QtCore.Qt.ShiftModifier:
+            self.shiftclick.emit(point.x(), point.y())
+        else:
+            self.click.emit(point.x(), point.y())
+                
     def wheelEvent(self, event):
-        
         factor = 1.41 ** (event.delta() / 240.0)
-        
         self.scale(factor, factor)
         
 
 class dialog(QtCore.QObject):
     """
-    Dialog is the "view"    """
+    Dialog is the "view"    
+    """
     
-    circle = QtGui.QGraphicsEllipseItem(10, 10, 10, 10)
+    selected = None
     
-    def setupUi(self, Dialog):
+    def setupUi(self, Dialog, models):
         Dialog.setObjectName("Dialog")
         Dialog.resize(648, 612)
         Dialog.setModal(False)
+        
+        self.models = models
+        self.graphicMap = {}
         
         self.graphicsView = graphicsView(Dialog)
         self.graphicsView.setGeometry(QtCore.QRect(10, 10, 631, 591))
@@ -57,14 +66,9 @@ class dialog(QtCore.QObject):
         self.retranslateUi(Dialog)
         QtCore.QMetaObject.connectSlotsByName(Dialog)
         
-        self.circle.setPen(QtGui.QPen(QtGui.QColor("red")))
-        
         self.scene.addPixmap(
             QtGui.QPixmap("africa-map1.jpg")
             )
-        
-        self.scene.addItem(self.circle)
-        
         
     def retranslateUi(self, Dialog):
         Dialog.setWindowTitle(
@@ -75,24 +79,49 @@ class dialog(QtCore.QObject):
                 QtGui.QApplication.UnicodeUTF8
                 )
             )
+    
+        
+    def update(self):
+        """
+        Update objects
+        """
+        # Iterate through, {model: graphicItem}
+        self.selected = None
+        
+        # Populate graphic map.
+        for entry in self.models:
+            if entry in self.graphicMap:
+                continue
+            
+            elipse = QtGui.QGraphicsEllipseItem(entry.x, entry.y, 5, 5)
+            elipse.setPen(QtGui.QPen(QtGui.QColor("red")))
+            elipse.setToolTip(
+                QtCore.QString('({},{})'.format(entry.x, entry.y))
+                )
+            self.scene.addItem(elipse)
+            self.graphicMap[entry] = elipse
 
-    def draw(self, (x, y)):
+
+    def select(self, (x, y)):
         """
         Views a model as a point.
         """
-        self.circle.setRect(x, y, 10, 10)
-        
+        item = self.scene.itemAt(x, y)
+        item.setPen(QtGui.QPen(QtGui.QColor("yellow")))
+        self.selected = item
+    
+    def move(self, (x, y)):
+        if self.selected:
+            self.selected.setRect(x, y, 5, 5)
+            
+            
+            
 #==============================================================================
 # Model
 #==============================================================================
 
-class Model():
-    """
-    Representation of things, like points and polygons.
-    """
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
+#point = geometry.Point()
+#ine = geometry.linestring()
 
 
 #==============================================================================
@@ -106,17 +135,32 @@ class Controller(QtGui.QDialog):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
+        self.models = []
+
         self.view = dialog()
-        self.view.setupUi(self)
+        self.view.setupUi(self, self.models)
         
         # Connect to messages.
         self.view.graphicsView.movement.connect(self.movement)
-
+        self.view.graphicsView.click.connect(self.click)
+        self.view.graphicsView.shiftclick.connect(self.shiftclick)
+        
+        
     # This is where the message needs to propagate to, the controller needs to
     # know that something has happened in the view.
     def movement(self, x, y):
         # Tell the view to draw.
-        self.view.draw((x, y))
+        self.view.move((x, y))
+        
+    def click(self, x, y):
+        # Append a new point "model". 
+        self.models.append(
+            geometry.Point(x, y)
+            )
+        self.view.update()
+        
+    def shiftclick(self, x, y):
+        self.view.select((x,y))
 
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
