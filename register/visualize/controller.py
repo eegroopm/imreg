@@ -106,16 +106,18 @@ class dialog(QtCore.QObject):
         """
         Views a model as a point.
         """
-        item = self.scene.itemAt(x, y)
-        item.setPen(QtGui.QPen(QtGui.QColor("yellow")))
-        self.selected = item
-    
+        try:
+            item = self.scene.itemAt(x, y)
+            item.setPen(QtGui.QPen(QtGui.QColor("yellow")))
+            self.selected = item
+        except AttributeError as error:
+            print 'bah'
+            
     def move(self, (x, y)):
         if self.selected:
             self.selected.setRect(x, y, 5, 5)
-            
-            
-            
+
+
 #==============================================================================
 # Model
 #==============================================================================
