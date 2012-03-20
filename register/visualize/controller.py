@@ -48,6 +48,9 @@ class dialog(QtCore.QObject):
     
     selected = None
     
+    pointUpdate = QtCore.pyqtSignal(int, int, geometry.Point, name='pointupdate')
+    
+    
     def setupUi(self, Dialog, models):
         Dialog.setObjectName("Dialog")
         Dialog.resize(648, 612)
@@ -55,6 +58,7 @@ class dialog(QtCore.QObject):
         
         self.models = models
         self.graphicMap = {}
+        self.modelMap = {}
         
         self.graphicsView = graphicsView(Dialog)
         self.graphicsView.setGeometry(QtCore.QRect(10, 10, 631, 591))
@@ -85,23 +89,30 @@ class dialog(QtCore.QObject):
         """
         Update objects
         """
-        # Iterate through, {model: graphicItem}
-        self.selected = None
-        
+
         # Populate graphic map.
         for entry in self.models:
+
             if entry in self.graphicMap:
+                self.graphicMap[entry].setPen(QtGui.QPen(QtGui.QColor("red")))
                 continue
-            
+
             elipse = QtGui.QGraphicsEllipseItem(entry.x, entry.y, 5, 5)
             elipse.setPen(QtGui.QPen(QtGui.QColor("red")))
             elipse.setToolTip(
                 QtCore.QString('({},{})'.format(entry.x, entry.y))
                 )
             self.scene.addItem(elipse)
+
             self.graphicMap[entry] = elipse
+            self.modelMap[elipse] = entry
 
+        if self.selected in self.modelMap:
+            model = self.modelMap[self.selected]
+            self.pointUpdate.emit(10, 10, model)
 
+        self.selected = None
+        
     def select(self, (x, y)):
         """
         Views a model as a point.
@@ -111,8 +122,9 @@ class dialog(QtCore.QObject):
             item.setPen(QtGui.QPen(QtGui.QColor("yellow")))
             self.selected = item
         except AttributeError as error:
-            print 'bah'
-            
+            pass
+
+
     def move(self, (x, y)):
         if self.selected:
             self.selected.setRect(x, y, 5, 5)
@@ -146,24 +158,27 @@ class Controller(QtGui.QDialog):
         self.view.graphicsView.movement.connect(self.movement)
         self.view.graphicsView.click.connect(self.click)
         self.view.graphicsView.shiftclick.connect(self.shiftclick)
-        
+        self.view.pointUpdate.connect(self.updatePoint)
         
     # This is where the message needs to propagate to, the controller needs to
     # know that something has happened in the view.
     def movement(self, x, y):
         # Tell the view to draw.
         self.view.move((x, y))
-        
+
     def click(self, x, y):
         # Append a new point "model". 
         self.models.append(
             geometry.Point(x, y)
             )
         self.view.update()
-        
+
     def shiftclick(self, x, y):
         self.view.select((x,y))
-
+    
+    def updatePoint(self, x, y, point):
+        point.coords = (x, y)
+    
 if __name__ == "__main__":
     app = QtGui.QApplication(sys.argv)
     application = Controller()
