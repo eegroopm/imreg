@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>imreg by pyimreg</title>
+    
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>imreg</h1>
+        <p>Linear and non-linear image registration methods, using scipy and numpy.</p>
+        <p class="view"><a href="https://github.com/pyimreg/imreg">View the Project on GitHub <small>pyimreg/imreg</small></a></p>
+        <ul>
+          <li><a href="https://github.com/pyimreg/imreg/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/pyimreg/imreg/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/pyimreg/imreg">Fork On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h3>Welcome</h3>
+
+<p>"imreg" is the python implementation of a collection of image alignment (registration) methods. The package is intended to be simple to use and leverages off both scipy, numpy and custom build c++ extensions.</p>
+
+<h3>Installation</h3>
+
+<p>The package is available from pypi and installable like so:</p>
+
+<pre><code>pip install imreg
+</code></pre>
+
+<h3>Example use:</h3>
+
+<p>Linear registration of a rotated image, in this case the famous "lenna" image. (<a href="http://en.wikipedia.org/wiki/Lenna">http://en.wikipedia.org/wiki/Lenna</a>)</p>
+
+<pre><code>import scipy.ndimage as nd
+import scipy.misc as misc
+
+from imreg.models import model
+from imreg.metrics import metric
+from imreg.samplers import sampler
+from imreg import register
+
+from imreg.visualize import plot
+
+# Form some test data (lena, lena rotated 20 degrees)
+image = misc.lena()
+template = nd.rotate(image, 20, reshape=False)
+
+# Form the affine registration instance.
+affine = register.Register(
+    model.Affine,
+    metric.Residual,
+    sampler.CubicConvolution
+    )
+
+# Coerce the image data into RegisterData.
+image = register.RegisterData(image).downsample(2)
+template = register.RegisterData(template).downsample(2)
+
+# Register.
+step, search = affine.register(
+    image,
+    template,
+    verbose=True,
+    )
+</code></pre>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/pyimreg">pyimreg</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
