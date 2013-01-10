@@ -8,7 +8,6 @@
 language: erlang
 env:
     - PYTHON=python PYSUF='' PYVER=2.7
-    - PYTHON=python3 PYSUF='3' PYVER=3.2
 install:
     - sudo apt-get update  # needed for python3-numpy
     - sudo apt-get install $PYTHON-dev
@@ -25,4 +24,4 @@ script:
     # Change into an innocuous directory and find tests from installation
     - mkdir for_test
     - cd for_test
-    - nosetests-$PYVER --exe -v --cover-package=skimage skimage
+    - py.test --pyargs imreg.tests -q
