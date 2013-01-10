@@ -1,5 +1,8 @@
 .. -*- mode: rst -*-
 
+[![Build Status](https://travis-ci.org/pyimreg/imreg.png?branch=master)](https://travis-ci.org/pyimreg/imreg)
+
+
 About
 =====
 
@@ -31,7 +34,7 @@ python modules. To install in your home directory, use::
 To install for all users on Unix/Linux::
 
   python setup.py build
-  
+
   sudo python setup.py install
 
 Development
@@ -40,9 +43,9 @@ Development
 Basic rules for commits to the imreg repository:
 
  + master is our stable "release" branch.
-	
- + feature branches (or contributor pull requests) for each ticket on github are merged (into master) after review only. 
- 
+
+ + feature branches (or contributor pull requests) for each ticket on github are merged (into master) after review only.
+
  + tests for new features using py.test *must* exist before merges.
 
 GIT
@@ -51,12 +54,12 @@ GIT
 You can check the latest sources with the command::
 
     git clone git://github.com/pyimreg/imreg.git
-    
+
 Contributors
 ~~~~~~~~~~~~~
 
 Follow: Fork + Pull Model::
-     
+
     http://help.github.com/send-pull-requests/
 
 Maintainers
@@ -69,8 +72,8 @@ Tracking an already formed branch::
    git checkout -b localBranch origin/remoteBranch
 
 Forming a new branch and pushing to origin::
-   
+
    git checkout -b localFeature
-	
+
    git push origin localFeature
 
