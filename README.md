@@ -1,7 +1,3 @@
-
-[![Build Status](https://travis-ci.org/pyimreg/imreg.png?branch=master)](https://travis-ci.org/pyimreg/imreg)
-
-
 About
 =====
 
@@ -13,12 +9,11 @@ It is currently maintained by:
    - Riaan Van Den Dool,
    - Stefan Van Der Walt.
 
-Important links
-===============
+Testing
+=======
 
-Originally forked from an older project:
+All tests are currently: [![Build Status](https://travis-ci.org/pyimreg/imreg.png?branch=master)](https://travis-ci.org/pyimreg/imreg)
 
-- Forked from : https://github.com/nfaggian/python-register
 
 Dependencies
 ============
