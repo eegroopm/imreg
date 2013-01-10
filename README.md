@@ -1,4 +1,3 @@
-.. -*- mode: rst -*-
 
 [![Build Status](https://travis-ci.org/pyimreg/imreg.png?branch=master)](https://travis-ci.org/pyimreg/imreg)
 
@@ -6,22 +5,30 @@
 About
 =====
 
-*imreg*, short for image registration, is a python package for image registration built ontop of scipy and numpy.
+*imreg*, short for image registration, is a python package for image registration
+built ontop of scipy and numpy.
 
-It is currently maintained by Nathan Faggian, Riaan Van Den Dool and Stefan Van Der Walt.
+It is currently maintained by:
+   - Nathan Faggian,
+   - Riaan Van Den Dool,
+   - Stefan Van Der Walt.
 
 Important links
 ===============
+
+Originally forked from an older project:
 
 - Forked from : https://github.com/nfaggian/python-register
 
 Dependencies
 ============
 
-The required dependencies to build the software are python >= 2.5,
-setuptools, NumPy >= 1.5, SciPy >= 0.9 and a working C++ compiler.
+The required dependencies to build the software are:
 
-To run the tests you will also need py.test >= 2.0.
+  - python >= 2.5
+  - numpy >= 1.5
+  - scipy >= 0.9
+  - py.test >= 2.0
 
 Install
 =======
@@ -40,40 +47,7 @@ To install for all users on Unix/Linux::
 Development
 ===========
 
-Basic rules for commits to the imreg repository:
-
- + master is our stable "release" branch.
-
- + feature branches (or contributor pull requests) for each ticket on github are merged (into master) after review only.
-
- + tests for new features using py.test *must* exist before merges.
-
-GIT
-~~~
-
-You can check the latest sources with the command::
-
-    git clone git://github.com/pyimreg/imreg.git
-
-Contributors
-~~~~~~~~~~~~~
-
 Follow: Fork + Pull Model::
 
     http://help.github.com/send-pull-requests/
-
-Maintainers
-~~~~~~~~~~~~~
-
-Follow: Shared Repository Model
-
-Tracking an already formed branch::
-
-   git checkout -b localBranch origin/remoteBranch
-
-Forming a new branch and pushing to origin::
-
-   git checkout -b localFeature
-
-   git push origin localFeature
 
