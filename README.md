@@ -12,8 +12,7 @@ It is currently maintained by:
 Testing
 =======
 
-All tests are currently: [![Build Status](https://travis-ci.org/pyimreg/imreg.png?branch=master)](https://travis-ci.org/pyimreg/imreg)
-
+[![Build Status](https://travis-ci.org/pyimreg/imreg.png?branch=master)](https://travis-ci.org/pyimreg/imreg)
 
 Dependencies
 ============
