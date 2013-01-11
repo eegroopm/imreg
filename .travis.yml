@@ -23,5 +23,4 @@ install:
     - sudo $PYTHON setup.py install
 
 script:
-    - cd ../
     - py.test -v --pyargs imreg
