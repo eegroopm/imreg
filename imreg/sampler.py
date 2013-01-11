@@ -3,7 +3,14 @@
 import numpy as np
 import scipy.ndimage as nd
 
-import interpolation
+# Install the cython importer
+import pyximport
+
+pyximport.install()
+
+# Dynamically compile the interpolation module
+import _interpolation as interpolation
+
 
 # Configuration for the extrapolation mode and fill value.
 EXTRAPOLATION_MODE = 'c'
