@@ -152,28 +152,16 @@ class optStep():
 
     def __init__(
         self,
-        warpedImage=None,
-        warp=None,
-        grid=None,
         error=None,
         p=None,
         deltaP=None,
         decreasing=None,
-        template=None,
-        image=None,
-        displacement=None
         ):
 
-        self.warpedImage = warpedImage
-        self.warp = warp
-        self.grid = grid
         self.error = error
         self.p = p
         self.deltaP = deltaP
         self.decreasing = decreasing
-        self.template = template
-        self.image = image
-        self.displacement = displacement
 
 
 class Register(object):
@@ -360,12 +348,6 @@ class Register(object):
                error=np.abs(e).sum()/np.prod(image.data.shape),
                p=p.copy(),
                deltaP=deltaP.copy(),
-               grid=image.coords.tensor.copy(),
-               warp=warp.copy(),
-               displacement=model.transform(p),
-               warpedImage=warpedImage.copy(),
-               template=template.data,
-               image=image.data,
                decreasing=True
                )
 
@@ -428,12 +410,7 @@ class Register(object):
             J = metric.jacobian(model, warpedImage, p)
 
             # Compute the parameter update vector.
-            deltaP = self.__deltaP(
-                J,
-                e,
-                alpha,
-                p
-                )
+            deltaP = self.__deltaP(J, e, alpha, p)
 
             # Evaluate stopping condition:
             if np.dot(deltaP.T, deltaP) < 1e-4:
@@ -442,7 +419,7 @@ class Register(object):
             # Update the estimated parameters.
             p += deltaP
 
-        return bestStep, search
+        return bestStep, warpedImage, search
 
 
 class FeatureRegister():

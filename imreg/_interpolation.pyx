@@ -31,6 +31,8 @@ def nearest(
                                 'C',
                                 0.0
                                 )
+    return 0
+
 
 def bilinear(
     cnp.ndarray[double, ndim=3,  mode="c"] warp,
@@ -55,7 +57,7 @@ def bilinear(
                                 'C',
                                 0.0
                                 )
-
+    return 0
 
 
 # Code below is directly from skimage -
