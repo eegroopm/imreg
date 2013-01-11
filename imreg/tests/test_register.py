@@ -28,7 +28,7 @@ def pytest_generate_tests(metafunc):
     """
 
     image = misc.lena()
-    image = nd.zoom(image, 0.50)
+    image = nd.zoom(image, 0.25)
 
     if metafunc.function is test_shift:
 
@@ -98,7 +98,7 @@ def test_shift(image, template, p):
     template = register.RegisterData(template)
 
 
-    step, _search = shift.register(
+    step, _image, _search = shift.register(
         image,
         template
         )
@@ -125,7 +125,7 @@ def test_affine(image, template, p):
     image = register.RegisterData(image)
     template = register.RegisterData(template)
 
-    step, _search = affine.register(
+    step,  _image, _search = affine.register(
         image,
         template
         )
