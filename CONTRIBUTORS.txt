@@ -1,8 +1,6 @@
 - Nathan Faggian
-  Australian Bureau of Meteorology
 
 - Stefan Van Der Walt
-  UC Berkley
 
 - Riaan Van Den Dool
-  
+
