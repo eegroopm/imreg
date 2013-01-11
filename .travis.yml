@@ -16,7 +16,6 @@ install:
     - sudo apt-get install $PYTHON-numpy
     - sudo apt-get install $PYTHON-scipy
     - sudo apt-get install $PYTHON-setuptools
-    - sudo apt-get install $PYTHON-pytest
     - sudo pip-$PYVER install cython
     - sudo pip-$PYVER install pytest
     - sudo apt-get install libfreeimage3
