@@ -1,7 +1,6 @@
 import numpy as np
 
-from imreg import model, register
-from imreg.samplers import sampler
+from imreg import model, register, sampler
 
 import scipy.misc as misc
 import scipy.ndimage as nd
