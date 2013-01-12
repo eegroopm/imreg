@@ -3,14 +3,7 @@
 import numpy as np
 import scipy.ndimage as nd
 
-# Install the cython importer
-import pyximport
-
-pyximport.install()
-
-# Dynamically compile the interpolation module
-import _interpolation as interpolation
-
+import interpolation
 
 # Configuration for the extrapolation mode and fill value.
 EXTRAPOLATION_MODE = 'c'
@@ -30,8 +23,8 @@ class Sampler(object):
         appropriate.
     """
 
-    METHOD=None
-    DESCRIPTION=None
+    METHOD = None
+    DESCRIPTION = None
 
     def __init__(self, coordinates):
 
@@ -61,8 +54,7 @@ class Sampler(object):
         i = self.coordinates.tensor[0] + warp[0]
         j = self.coordinates.tensor[1] + warp[1]
 
-        packedCoords = (i.reshape(1,i.size),
-                        j.reshape(1,j.size))
+        packedCoords = i.reshape(1, i.size), j.reshape(1, j.size)
 
         return self.sample(array, np.vstack(packedCoords))
 
@@ -123,9 +115,9 @@ class Nearest(Sampler):
 
 class Bilinear(Sampler):
 
-    METHOD='Bilinear (BL)'
+    METHOD = 'Bilinear (BL)'
 
-    DESCRIPTION="""
+    DESCRIPTION = """
         Given a coordinate in the array a linear interpolation is performed
         between 4 (2x2) nearest values.
         """
@@ -161,56 +153,11 @@ class Bilinear(Sampler):
         return result.flatten()
 
 
-# class CubicConvolution(Sampler):
-
-#     METHOD='Cubic Convolution (CC)'
-
-#     DESCRIPTION="""
-#         Given a coordinate in the array cubic convolution interpolates between
-#         16 (4x4) nearest values.
-#         """
-
-#     def __init__(self, coordinates):
-#         Sampler.__init__(self, coordinates)
-
-
-#     def f(self, array, warp):
-#         """
-#         A sampling function, responsible for returning a sampled set of values
-#         from the given array.
-
-#         Parameters
-#         ----------
-#         array: nd-array
-#             Input array for sampling.
-#         warp: nd-array
-#             Deformation coordinates.
-
-#         Returns
-#         -------
-#         sample: nd-array
-#            Sampled array data.
-#         """
-
-#         if self.coordinates is None:
-#             raise ValueError('Appropriately defined coordinates not provided.')
-
-#         result = np.zeros_like(array)
-
-#         arg0 = c_ndarray(warp, dtype=np.double, ndim=3)
-#         arg1 = c_ndarray(array, dtype=np.double, ndim=2)
-#         arg2 = c_ndarray(result, dtype=np.double, ndim=2)
-
-#         libsampler.cubicConvolution(arg0, arg1, arg2)
-
-#         return result.flatten()
-
-
 class Spline(Sampler):
 
-    METHOD='nd-image spline sampler (SR)'
+    METHOD = 'nd-image spline sampler (SR)'
 
-    DESCRIPTION="""
+    DESCRIPTION = s"""
         Refer to the documentation for the ndimage map_coordinates function.
 
         http://docs.scipy.org/doc/scipy/reference/generated/

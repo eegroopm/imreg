@@ -4,30 +4,6 @@ import numpy as np
 import scipy.ndimage as nd
 
 
-def _smooth(image, variance):
-    """
-    Gaussian smoothing using the fast-fourier-transform (FFT)
-
-    Parameters
-    ----------
-    image: nd-array
-        Input image
-    variance: float
-        Variance of the Gaussian kernel.
-
-    Returns
-    -------
-    image: nd-array
-       An image convolved with the Gaussian kernel.
-
-    See also
-    --------
-    regisger.Register.smooth
-    """
-
-    return np.real(np.fft.ifft2(nd.fourier_gaussian(np.fft.fft2(image), variance)))
-
-
 class Coordinates(object):
     """
     Container for grid coordinates.
@@ -48,7 +24,7 @@ class Coordinates(object):
         self.domain = domain
         self.tensor = np.mgrid[0.:domain[1], 0.:domain[3]]
 
-        self.homogenous = np.zeros((3,self.tensor[0].size))
+        self.homogenous = np.zeros((3, self.tensor[0].size))
         self.homogenous[0] = self.tensor[1].flatten()
         self.homogenous[1] = self.tensor[0].flatten()
         self.homogenous[2] = 1.0
@@ -110,22 +86,6 @@ class RegisterData(object):
 
         # TODO: features need to be scaled also.
         return RegisterData(resampled, spacing=factor)
-
-    def smooth(self, variance):
-        """
-        Smooth feature data in place.
-
-        Parameters
-        ----------
-        variance: float
-            Variance of the Gaussian kernel.
-
-        See also
-        --------
-        register.Register.smooth
-        """
-
-        self.data = _smooth(self.data, variance)
 
 
 class optStep():
@@ -195,8 +155,6 @@ class Register(object):
         A `sampler` class definition.
     """
 
-
-
     MAX_ITER = 200
     MAX_BAD = 5
 
@@ -229,9 +187,9 @@ class Register(object):
 
         H = np.dot(J.T, J)
 
-        H += np.diag(alpha*np.diagonal(H))
+        H += np.diag(alpha * np.diagonal(H))
 
-        return np.dot( np.linalg.inv(H), np.dot(J.T, e))
+        return np.dot(np.linalg.inv(H), np.dot(J.T, e))
 
     def __dampening(self, alpha, decreasing):
         """
@@ -316,7 +274,7 @@ class Register(object):
                 ]) * scale[0]
 
             # Estimate p, using the displacement field.
-            p = model.estimate(-1.0*scaledDisplacement)
+            p = model.estimate(-1.0 * scaledDisplacement)
 
         p = model.identity if p is None else p
         deltaP = np.zeros_like(p)
@@ -329,16 +287,15 @@ class Register(object):
         badSteps = 0
         bestStep = None
 
-        for itteration in range(0,self.MAX_ITER):
+        for itteration in range(0, self.MAX_ITER):
 
             # Compute the inverse "warp" field.
             warp = model.warp(p)
 
-            # Sample the image using the inverse warp.
-            warpedImage = _smooth(
-                sampler.f(image.data, warp).reshape(image.data.shape),
-                0.50,
-                )
+            # Sample the image using the inverse warp, the reshape is a
+            # view.
+            warpedImage = sampler.f(image.data, warp)
+            warpedImage.shape = image.data.shape
 
             # Evaluate the error metric.
             e = metric.error(warpedImage, template.data)
