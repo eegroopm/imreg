@@ -3,7 +3,15 @@
 import numpy as np
 import scipy.ndimage as nd
 
-import interpolation
+try:
+    import interpolation
+except ImportError as error:
+    # Attempt autocompilation.
+    import pyximport
+    pyximport.install()
+    import _interpolation as interpolation
+finally:
+    raise error
 
 # Configuration for the extrapolation mode and fill value.
 EXTRAPOLATION_MODE = 'c'
