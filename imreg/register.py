@@ -1,7 +1,6 @@
 """ A top level registration module """
 
 import numpy as np
-import scipy.ndimage as nd
 
 
 class Coordinates(object):
@@ -20,7 +19,6 @@ class Coordinates(object):
 
     def __init__(self, domain, spacing=None):
 
-        self.spacing = 1.0 if not spacing else spacing
         self.domain = domain
         self.tensor = np.mgrid[0.:domain[1], 0.:domain[3]]
 
@@ -40,8 +38,6 @@ class RegisterData(object):
         The image registration image values.
     coords : nd-array, optional
         The grid coordinates.
-    features : dictionary, optional
-        A mapping of unique ids to registration features.
     """
 
     def __init__(self, data, coords=None, features=None, spacing=1.0):
@@ -56,37 +52,6 @@ class RegisterData(object):
         else:
             self.coords = coords
 
-        # Features are (as a starting point a dictionary) which define
-        # labeled salient image coordinates (point features).
-
-        self.features = features
-
-
-    def downsample(self, factor=2):
-        """
-        Down samples the RegisterData by a user defined factor. The ndimage
-        zoom function is used to interpolate the image, with a scale defined
-        as 1/factor.
-
-        Spacing is used to infer the scale difference between images - defining
-        the size of a pixel in arbitrary units (atm).
-
-        Parameters
-        ----------
-        factor: float (optional)
-            The scaling factor which is applied to image data and coordinates.
-
-        Returns
-        -------
-        scaled: nd-array
-           The parameter update vector.
-        """
-
-        resampled = nd.zoom(self.data, 1. / factor)
-
-        # TODO: features need to be scaled also.
-        return RegisterData(resampled, spacing=factor)
-
 
 class optStep():
     """
@@ -94,12 +59,6 @@ class optStep():
 
     Attributes
     ----------
-    warpedImage: nd-array
-        Deformed image.
-    warp: nd-array
-        Estimated deformation field.
-    grid: nd-array
-        Grid coordinates in tensor form.
     error: float
         Normalised fitting error.
     p: nd-array
@@ -110,14 +69,7 @@ class optStep():
         State of the error function at this point.
     """
 
-    def __init__(
-        self,
-        error=None,
-        p=None,
-        deltaP=None,
-        decreasing=None,
-        ):
-
+    def __init__(self, error=None, p=None, deltaP=None, decreasing=None):
         self.error = error
         self.p = p
         self.deltaP = deltaP
@@ -209,14 +161,7 @@ class Register(object):
         """
         return alpha / 10. if decreasing else alpha * 10.
 
-    def register(self,
-                 image,
-                 template,
-                 p=None,
-                 alpha=None,
-                 displacement=None,
-                 plotCB=None,
-                 verbose=False):
+    def register(self, image, template, p=None, alpha=None, verbose=False):
         """
         Computes the registration between the image and template.
 
@@ -228,12 +173,8 @@ class Register(object):
             The target image.
         p: list (or nd-array), optional.
             First guess at fitting parameters.
-        displacement: nd-array, optional.
-            A displacement field estimate.
         alpha: float
             The dampening factor.
-        plotCB: function, optional
-            A plotting function.
         verbose: boolean
             A debug flag for text status updates.
 
@@ -249,32 +190,10 @@ class Register(object):
             Fitting error.
         """
 
-        #TODO: Determine the common coordinate system.
-        if image.coords.spacing != template.coords.spacing:
-             raise ValueError('Coordinate systems differ.')
-
         # Initialize the models, metric and sampler.
         model = self.model(image.coords)
         sampler = self.sampler(image.coords)
         metric = self.metric()
-
-        if displacement is not None:
-
-            # Account for difference warp resolutions.
-            scale = (
-                (image.data.shape[0] * 1.) / displacement.shape[1],
-                (image.data.shape[1] * 1.) / displacement.shape[2],
-                )
-
-            # Scale the displacement field and estimate the model parameters,
-            # refer to test_CubicSpline_estimate
-            scaledDisplacement = np.array([
-                nd.zoom(displacement[0], scale),
-                nd.zoom(displacement[1], scale)
-                ]) * scale[0]
-
-            # Estimate p, using the displacement field.
-            p = model.estimate(-1.0 * scaledDisplacement)
 
         p = model.identity if p is None else p
         deltaP = np.zeros_like(p)
@@ -302,7 +221,7 @@ class Register(object):
 
             # Cache the optimization step.
             searchStep = optStep(
-               error=np.abs(e).sum()/np.prod(image.data.shape),
+               error=np.abs(e).sum() / np.prod(image.data.shape),
                p=p.copy(),
                deltaP=deltaP.copy(),
                decreasing=True
@@ -337,21 +256,9 @@ class Register(object):
                     )
 
                 if searchStep.decreasing:
-
                     bestStep = searchStep
-
-                    if plotCB is not None:
-                        plotCB(image.data,
-                               template.data,
-                               warpedImage,
-                               image.coords.tensor,
-                               warp,
-                               '{0}:{1}'.format(model.MODEL, itteration)
-                               )
                 else:
-
                     badSteps += 1
-
                     if badSteps > self.MAX_BAD:
                         if verbose:
                             print ('Optimization break, maximum number '
@@ -377,89 +284,3 @@ class Register(object):
             p += deltaP
 
         return bestStep, warpedImage, search
-
-
-class FeatureRegister():
-    """
-    A registration class for estimating the deformation model parameters that
-    best solve:
-
-    | :math:`\arg\min_{p} | f(p_0) - p_1 |`
-    |
-    | where:
-    |    :math:`f`     : is a transformation function.
-    |    :math:`p_0`   : image features.
-    |    :math:`p_1`   : template features.
-
-    Notes:
-    ------
-
-    Solved using linear algebra - does not consider pixel intensities
-
-    Attributes
-    ----------
-    model: class
-        A `deformation` model class definition.
-    sampler: class
-        A `sampler` class definition.
-    """
-
-    def __init__(self, model, sampler):
-
-        self.model = model
-        self.sampler = sampler
-
-    def register(self, image, template):
-        """
-        Computes the registration using only image (point) features.
-
-        Parameters
-        ----------
-        image: RegisterData
-            The floating registration data.
-        template: RegisterData
-            The target registration data.
-        model: Model
-            The deformation model.
-
-        Returns
-        -------
-        p: nd-array.
-                Model parameters.
-        warp: nd-array.
-            Warp field estimate.
-        warpedImage: nd-array
-            The re-sampled image.
-        error: float
-            Fitting error.
-        """
-
-        # Initialize the models, metric and sampler.
-        model = self.model(image.coords)
-        sampler = self.sampler(image.coords)
-
-        # Form corresponding point sets.
-        imagePoints = []
-        templatePoints = []
-
-        for id, point in image.features['points'].items():
-            if id in template.features['points']:
-                imagePoints.append(point)
-                templatePoints.append(template.features['points'][id])
-                #print '{} -> {}'.format(imagePoints[-1], templatePoints[-1])
-
-        if not imagePoints or not templatePoints:
-            raise ValueError('Requires corresponding features to register.')
-
-        # Note the inverse warp is estimated here.
-        p, error = model.fit(
-            np.array(templatePoints),
-            np.array(imagePoints)
-            )
-
-        warp = model.warp(p)
-
-        # Sample the image using the inverse warp.
-        warpedImage = sampler.f(image.data, warp).reshape(image.data.shape)
-
-        return p, warp, warpedImage, error
