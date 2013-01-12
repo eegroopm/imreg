@@ -9,6 +9,9 @@ An excellent reference for this approach is:
     In Proceedings of the 2001 IEEE Conference on Computer Vision and Pattern Recognition, 
     Volume 1, Pages 1090 – 1097, December 2001.
 
+
+This package uses `semantic versioning <http://semver.org/>`.
+
 Maintainers
 ===========
 
