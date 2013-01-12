@@ -1,6 +1,24 @@
 """ A top level registration module """
 
 import numpy as np
+import logging
+
+# Setup a loger.
+log = logging.getLogger('imreg.register')
+
+REGISTRATION_STEP = """
+================================================================================
+iteration  : {0}
+parameters : {1}
+error      : {2}
+================================================================================
+"""
+
+REGISTRATION_STOP = """
+================================================================================
+Optimization break, maximum number of bad iterations exceeded.
+================================================================================
+"""
 
 
 class Coordinates(object):
@@ -231,17 +249,13 @@ class Register(object):
             bestStep = searchStep if bestStep is None else bestStep
 
             if verbose:
-                print ('{0}\n'
-                       'iteration  : {1} \n'
-                       'parameters : {2} \n'
-                       'error      : {3} \n'
-                       '{0}'
-                      ).format(
-                            '='*80,
-                            itteration,
-                            ' '.join( '{0:3.2f}'.format(param) for param in searchStep.p),
-                            searchStep.error
-                            )
+                log.warn(
+                    REGISTRATION_STEP.format(
+                        itteration,
+                        ' '.join('{0:3.2f}'.format(param) for param in searchStep.p),
+                        searchStep.error
+                        )
+                    )
 
             # Append the search step to the search.
             search.append(searchStep)
@@ -261,8 +275,7 @@ class Register(object):
                     badSteps += 1
                     if badSteps > self.MAX_BAD:
                         if verbose:
-                            print ('Optimization break, maximum number '
-                                   'of bad iterations exceeded.')
+                            log.warn(REGISTRATION_STOP)
                         break
 
                     # Restore the parameters from the previous best iteration.
