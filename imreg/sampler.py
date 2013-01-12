@@ -157,7 +157,7 @@ class Spline(Sampler):
 
     METHOD = 'nd-image spline sampler (SR)'
 
-    DESCRIPTION = s"""
+    DESCRIPTION = """
         Refer to the documentation for the ndimage map_coordinates function.
 
         http://docs.scipy.org/doc/scipy/reference/generated/

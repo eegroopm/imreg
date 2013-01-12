@@ -2,11 +2,11 @@
 
 """ imreg package configuration """
 import numpy
+import imreg
 
 from setuptools import setup, find_packages
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
-
 
 DISTNAME = 'imreg'
 DESCRIPTION = 'Image registration toolkit'
@@ -19,7 +19,9 @@ MAINTAINER_EMAIL = 'nathan.faggian@gmail.com'
 URL = 'pyimreg.github.com'
 LICENSE = 'Apache License (2.0)'
 DOWNLOAD_URL = ''
-VERSION = '0.1'
+
+VERSION = imreg.__version__
+
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
     'Environment :: Console',
