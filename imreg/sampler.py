@@ -10,8 +10,6 @@ except ImportError as error:
     import pyximport
     pyximport.install()
     import _interpolation as interpolation
-finally:
-    raise error
 
 # Configuration for the extrapolation mode and fill value.
 EXTRAPOLATION_MODE = 'c'
