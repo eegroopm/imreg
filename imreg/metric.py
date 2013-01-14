@@ -13,7 +13,7 @@ Method = collections.namedtuple('method', 'jacobian error update')
 # ==============================================================================
 
 
-def forwardsAdditiveJacobian(image, model, p):
+def forwardsAdditiveJacobian(image, model, p, coords):
     """
     Computes the jacobian dP/dE.
 
@@ -38,7 +38,7 @@ def forwardsAdditiveJacobian(image, model, p):
     dIx = grad[1].flatten()
     dIy = grad[0].flatten()
 
-    dPx, dPy = model.jacobian(p)
+    dPx, dPy = model.jacobian(coords, p)
 
     J = np.zeros_like(dPx)
     for index in range(0, dPx.shape[1]):

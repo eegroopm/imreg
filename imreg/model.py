@@ -4,133 +4,79 @@ import numpy as np
 import scipy.signal as signal
 
 
-class Model(object):
+class Coordinates(object):
     """
-    Abstract geometry model.
+    Container for grid coordinates.
 
     Attributes
     ----------
-    MODEL : string
-        The type of deformation model being used.
-    DESCRIPTION : string
-        A meaningful description of the model used, with references where
-        appropriate.
+    domain : nd-array
+        Domain of the coordinate system.
+    tensor : nd-array
+        Grid coordinates.
+    homogenous : nd-array
+        `Homogenous` coordinate system representation of grid coordinates.
     """
 
-    MODEL=''
-    DESCRIPTION=''
+    def __init__(self, domain, tensor=None):
 
+        self.domain = domain
 
-    def __init__(self, coordinates):
-        self.coordinates = coordinates
+        if tensor is None:
+            self.tensor = np.mgrid[domain[0]:domain[1], domain[2]:domain[3]]
+        else:
+            self.tensor = tensor
 
-    def fit(self, p0, p1):
-        """
-        Estimates the best fit parameters that define a warp field, which
-        deforms feature points p0 to p1.
-
-        Parameters
-        ----------
-        p0: nd-array
-            Image features (points).
-        p1: nd-array
-            Template features (points).
-
-        Returns
-        -------
-        parameters: nd-array
-            Model parameters.
-        error: float
-            Sum of RMS error between p1 and alinged p0.
-        """
-        raise NotImplementedError('')
+        self.homogenous = np.zeros((3, self.tensor[0].size))
+        self.homogenous[0] = self.tensor[1].flatten()
+        self.homogenous[1] = self.tensor[0].flatten()
+        self.homogenous[2] = 1.0
 
     @staticmethod
-    def scale(p, factor):
-        """
-        Scales an transformtaion by a factor.
+    def fromTensor(tensor):
+        domain = [
+            tensor[0].min(),
+            tensor[0].max(),
+            tensor[1].min(),
+            tensor[1].max()
+            ]
+        return Coordinates(domain, tensor)
 
-        Parameters
-        ----------
-        p: nd-array
-            Model parameters.
-        factor: float
-            A scaling factor.
+    @property
+    def xy(self):
+        return self.homogenous[0], self.homogenous[1]
 
-        Returns
-        -------
-        parameters: nd-array
-            Model parameters.
-        """
-        raise NotImplementedError('')
-
-    def estimate(self, warp):
-        """
-        Estimates the best fit parameters that define a warp field.
-
-        Parameters
-        ----------
-        warp: nd-array
-            Deformation field.
-
-        Returns
-        -------
-        parameters: nd-array
-           Model parameters.
-        """
-        raise NotImplementedError('')
-
-    def warp(self, parameters):
-        """
-        Computes the warp field given model parameters.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        warp: nd-array
-           Deformation field.
-        """
-
-        displacement = self.transform(parameters)
-
-        # Approximation of the inverse (samplers work on inverse warps).
-        return self.coordinates.tensor + displacement
-
-    def transform(self, parameters):
-        """
-        A geometric transformation of coordinates.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        coords: nd-array
-           Deformation coordinates.
-        """
-        raise NotImplementedError('')
-
-    def jacobian(self, p=None):
-        """
-        Evaluates the derivative of deformation model with respect to the
-        coordinates.
-        """
-        raise NotImplementedError('')
-
-    def __str__(self):
-        return 'Model: {0} \n {1}'.format(
-            self.MODEL,
-            self.DESCRIPTION
-            )
+    @property
+    def bbox(self):
+        tl = self.homogenous[0][0], self.homogenous[1][0]
+        tr = self.homogenous[0][-1], self.homogenous[1][0]
+        bl = self.homogenous[0][0], self.homogenous[1][-1]
+        br = self.homogenous[0][-1], self.homogenous[1][-1]
+        return (tl, tr, bl, br)
 
 
-class Shift(Model):
+def warp(model, parameters, coords):
+    """
+    Computes the warp field given model parameters.
+
+    Parameters
+    ----------
+    parameters: nd-array
+        Model parameters.
+
+    Returns
+    -------
+    warp: nd-array
+       Deformation field.
+    """
+
+    displacement = model.transform(parameters, coords)
+
+    # Approximation of the inverse (samplers work on inverse warps).
+    return Coordinates.fromTensor(coords.tensor + displacement)
+
+
+class Shift(object):
 
     MODEL='Shift (S)'
 
@@ -142,8 +88,8 @@ class Shift(Model):
         Unifying Framework. Int. J. Comput. Vision 56, 3 (February 2004).
         """
 
-    def __init__(self, coordinates):
-        Model.__init__(self, coordinates)
+    def __init__(self):
+        pass
 
     @property
     def identity(self):
@@ -201,7 +147,7 @@ class Shift(Model):
 
         return -parameters, error
 
-    def transform(self, parameters):
+    def transform(self, parameters, coords):
         """
         A "shift" transformation of coordinates.
 
@@ -217,34 +163,35 @@ class Shift(Model):
         """
 
         T = np.eye(3, 3)
-        T[0,2] = -parameters[0]
-        T[1,2] = -parameters[1]
+        T[0, 2] = -parameters[0]
+        T[1, 2] = -parameters[1]
 
-        displacement = np.dot(T, self.coordinates.homogenous) - \
-            self.coordinates.homogenous
+        displacement = np.dot(T, coords.homogenous) - \
+            coords.homogenous
 
-        shape = self.coordinates.tensor[0].shape
+        shape = coords.tensor[0].shape
 
         return np.array( [ displacement[1].reshape(shape),
                            displacement[0].reshape(shape)
                          ]
                        )
 
-    def jacobian(self, p=None):
+    def jacobian(self, coords, p=None):
         """
         Evaluates the derivative of deformation model with respect to the
         coordinates.
         """
 
-        dx = np.zeros((self.coordinates.tensor[0].size, 2))
-        dy = np.zeros((self.coordinates.tensor[0].size, 2))
+        dx = np.zeros((coords.tensor[0].size, 2))
+        dy = np.zeros((coords.tensor[0].size, 2))
 
         dx[:,0] = 1
         dy[:,1] = 1
 
         return (dx, dy)
 
-class Affine(Model):
+
+class Affine(object):
 
     MODEL='Affine (A)'
 
@@ -255,11 +202,6 @@ class Affine(Model):
         S. Baker and I. Matthews. 2004. Lucas-Kanade 20 Years On: A
         Unifying Framework. Int. J. Comput. Vision 56, 3 (February 2004).
         """
-
-
-    def __init__(self, coordinates):
-        Model.__init__(self, coordinates)
-
 
     @property
     def identity(self):
@@ -339,7 +281,7 @@ class Affine(Model):
         return parameters, error
 
 
-    def transform(self, p):
+    def transform(self, p, coords):
         """
         An "affine" transformation of coordinates.
 
@@ -360,10 +302,10 @@ class Affine(Model):
                       [0,         0,         1]
                       ])
 
-        displacement = np.dot(np.linalg.inv(T), self.coordinates.homogenous) - \
-            self.coordinates.homogenous
+        displacement = np.dot(np.linalg.inv(T), coords.homogenous) - \
+            coords.homogenous
 
-        shape = self.coordinates.tensor[0].shape
+        shape = coords.tensor[0].shape
 
         return np.array( [ displacement[1].reshape(shape),
                            displacement[0].reshape(shape)
@@ -371,27 +313,27 @@ class Affine(Model):
                        )
 
 
-    def jacobian(self, p=None):
+    def jacobian(self, coords, p=None):
         """"
         Evaluates the derivative of deformation model with respect to the
         coordinates.
         """
 
-        dx = np.zeros((self.coordinates.tensor[0].size, 6))
-        dy = np.zeros((self.coordinates.tensor[0].size, 6))
+        dx = np.zeros((coords.tensor[0].size, 6))
+        dy = np.zeros((coords.tensor[0].size, 6))
 
-        dx[:,0] = self.coordinates.tensor[1].flatten()
-        dx[:,2] = self.coordinates.tensor[0].flatten()
+        dx[:,0] = coords.tensor[1].flatten()
+        dx[:,2] = coords.tensor[0].flatten()
         dx[:,4] = 1.0
 
-        dy[:,1] = self.coordinates.tensor[1].flatten()
-        dy[:,3] = self.coordinates.tensor[0].flatten()
+        dy[:,1] = coords.tensor[1].flatten()
+        dy[:,3] = coords.tensor[0].flatten()
         dy[:,5] = 1.0
 
         return (dx, dy)
 
 
-class Projective(Model):
+class Projective(object):
 
     MODEL='Projective (P)'
 
@@ -402,10 +344,6 @@ class Projective(Model):
         S. Baker and I. Matthews. 2004. Lucas-Kanade 20 Years On: A
         Unifying Framework. Int. J. Comput. Vision 56, 3 (February 2004).
         """
-
-
-    def __init__(self, coordinates):
-        Model.__init__(self, coordinates)
 
 
     @property
@@ -466,7 +404,7 @@ class Projective(Model):
         return parameters, error
 
 
-    def transform(self, p):
+    def transform(self, p, coords):
         """
         An "projective" transformation of coordinates.
 
@@ -487,10 +425,10 @@ class Projective(Model):
                       [p[6],     p[7],     p[8]+1.0]
                       ])
 
-        displacement = np.dot(np.linalg.inv(T), self.coordinates.homogenous) - \
-            self.coordinates.homogenous
+        displacement = np.dot(np.linalg.inv(T), coords.homogenous) - \
+            coords.homogenous
 
-        shape = self.coordinates.tensor[0].shape
+        shape = coords.tensor[0].shape
 
         return np.array( [ displacement[1].reshape(shape),
                            displacement[0].reshape(shape)
@@ -498,17 +436,17 @@ class Projective(Model):
                        )
 
 
-    def jacobian(self, p):
+    def jacobian(self, coords, p):
         """"
         Evaluates the derivative of deformation model with respect to the
         coordinates.
         """
 
-        dx = np.zeros((self.coordinates.tensor[0].size, 9))
-        dy = np.zeros((self.coordinates.tensor[0].size, 9))
+        dx = np.zeros((coords.tensor[0].size, 9))
+        dy = np.zeros((coords.tensor[0].size, 9))
 
-        x = self.coordinates.tensor[1].flatten()
-        y = self.coordinates.tensor[0].flatten()
+        x = coords.tensor[1].flatten()
+        y = coords.tensor[0].flatten()
 
         dx[:,0] = x / (p[6]*x + p[7]*y + p[8] + 1)
         dx[:,2] = y / (p[6]*x + p[7]*y + p[8] + 1)
@@ -555,216 +493,3 @@ class Projective(Model):
         pHat = p.copy()
         pHat[0:6] *= factor
         return pHat
-
-
-class ThinPlateSpline(Model):
-
-    MODEL='Thin Plate Spline (TPS)'
-
-    DESCRIPTION="""
-        Computes a thin-plate-spline deformation model, as described in:
-
-        Bookstein, F. L. (1989). Principal warps: thin-plate splines and the
-        decomposition of deformations. IEEE Transactions on Pattern Analysis
-        and Machine Intelligence, 11(6), 567-585.
-
-        """
-
-    def __init__(self, coordinates):
-
-        Model.__init__(self, coordinates)
-
-    def U(self, r):
-        """
-        Kernel function, applied to solve the biharmonic equation.
-
-        Parameters
-        ----------
-        r: float
-            Distance between sample and coordinate point.
-
-        Returns
-        -------
-        U: float
-           Evaluated kernel.
-        """
-
-        return np.multiply(-np.power(r,2), np.log(np.power(r,2) + 1e-20))
-
-    def fit(self, p0, p1, lmatrix=False):
-        """
-        Estimates the best fit parameters that define a warp field, which
-        deforms feature points p0 to p1.
-
-        Parameters
-        ----------
-        p0: nd-array
-            Image features (points).
-        p1: nd-array
-            Template features (points).
-        lmatrix: boolean
-            Enables the spline design matrix when returning.
-
-        Returns
-        -------
-        parameters: nd-array
-            Model parameters.
-        error: float
-            Sum of RMS error between p1 and alinged p0.
-        L: nd-array
-            Spline design matrix, optional (using lmatrix keyword).
-        """
-
-        K = np.zeros((p0.shape[0], p0.shape[0]))
-
-        for i in range(0, p0.shape[0]):
-            for j in range(0, p0.shape[0]):
-                r = np.sqrt( (p0[i,0] - p0[j,0])**2 + (p0[i,1] - p0[j,1])**2 )
-                K[i,j] = self.U(r)
-
-        P = np.hstack((np.ones((p0.shape[0], 1)), p0))
-
-        L = np.vstack((np.hstack((K,P)),
-                       np.hstack((P.transpose(), np.zeros((3,3))))))
-
-        Y = np.vstack( (p1, np.zeros((3, 2))) )
-
-        parameters = np.dot(np.linalg.inv(L), Y)
-
-        # Estimate the thin-plate spline basis.
-        self.__basis(p0)
-
-        # Estimate the model fit error.
-        _p0, _p1, _projP0, error = self.__splineError(p0, p1, parameters)
-
-        if lmatrix:
-            return parameters, error, L
-        else:
-            return parameters, error
-
-    def __splineError(self, p0, p1, parameters):
-        """
-        Estimates the point alignment and computes the alignment error.
-
-        Parameters
-        ----------
-        p0: nd-array
-            Image features (points).
-        p1: nd-array
-            Template features (points).
-        parameters: nd-array
-            Thin-plate spline parameters.
-
-        Returns
-        -------
-        error: float
-            Alignment error between p1 and projected p0 (RMS).
-        """
-
-        # like __basis, compute a reduced set of basis vectors.
-
-        basis = np.zeros((p0.shape[0], len(p0)+3))
-
-        # nonlinear, spline component.
-        for index, p in enumerate( p0 ):
-            basis[:,index] = self.U(
-                np.sqrt(
-                    (p[0]-p1[:,0])**2 +
-                    (p[1]-p1[:,1])**2
-                    )
-                ).flatten()
-
-        # linear, affine component
-        basis[:,-3] = 1
-        basis[:,-2] = p1[:,1]
-        basis[:,-1] = p1[:,0]
-
-        # compute the alignment error.
-
-        projP0 = np.vstack( [
-           np.dot(basis, parameters[:,1]),
-           np.dot(basis, parameters[:,0])
-           ]
-           ).T
-
-        error = np.sqrt(
-           (projP0[:,0] - p1[:,0])**2 + (projP0[:,1] - p1[:,1])**2
-           ).sum()
-
-        return p0, p1, projP0, error
-
-    def __basis(self, p0):
-        """
-        Forms the thin plate spline deformation basis, which is composed of
-        a linear and non-linear component.
-
-        Parameters
-        ----------
-        p0: nd-array
-            Image features (points).
-        """
-
-        self.basis = np.zeros((self.coordinates.tensor[0].size, len(p0)+3))
-
-        # nonlinear, spline component.
-        for index, p in enumerate( p0 ):
-            self.basis[:,index] = self.U(
-                np.sqrt(
-                    (p[0]-self.coordinates.tensor[1])**2 +
-                    (p[1]-self.coordinates.tensor[0])**2
-                    )
-            ).flatten()
-
-        # linear, affine component
-
-        self.basis[:,-3] = 1
-        self.basis[:,-2] = self.coordinates.tensor[1].flatten()
-        self.basis[:,-1] = self.coordinates.tensor[0].flatten()
-
-
-    def transform(self, parameters):
-        """
-        A "thin-plate-spline" transformation of coordinates.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        coords: nd-array
-           Deformation coordinates.
-        """
-
-        shape = self.coordinates.tensor[0].shape
-
-        return np.array( [ np.dot(self.basis, parameters[:,1]).reshape(shape),
-                           np.dot(self.basis, parameters[:,0]).reshape(shape)
-                         ]
-                       )
-
-    def warp(self, parameters):
-        """
-        Computes the warp field given model parameters.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        warp: nd-array
-           Deformation field.
-        """
-
-        return self.transform(parameters)
-
-
-    def jacobian(self, p=None):
-        raise NotImplementedError('')
-
-    @property
-    def identity(self):
-        raise NotImplementedError('')

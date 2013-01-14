@@ -6,17 +6,17 @@ import scipy.misc as misc
 from imreg import model, register, sampler
 
 
-def warp(image, p, model):
+def warp(image, p, deformationModel):
     """
     Warps an image.
     """
-    coords = register.Coordinates(
+    coords = model.Coordinates(
         [0, image.shape[0], 0, image.shape[1]]
         )
 
-    model = model(coords)
+    deformedCoords = model.warp(deformationModel, p, coords)
 
-    warpedImage = sampler.bilinear(image, model.warp(p))
+    warpedImage = sampler.bilinear(image, deformedCoords.tensor)
 
     return warpedImage
 
@@ -38,7 +38,7 @@ def pytest_generate_tests(metafunc):
             template = warp(
                 image,
                 p,
-                model.Shift,
+                model.Shift(),
                 )
 
             metafunc.addcall(
@@ -63,7 +63,7 @@ def pytest_generate_tests(metafunc):
             template = warp(
                 image,
                 p,
-                model.Affine
+                model.Affine()
                 )
 
             metafunc.addcall(
@@ -84,9 +84,7 @@ def test_shift(image, template, p):
     Tests image registration using a shift deformation model.
     """
 
-    shift = register.Register(
-        model.Shift
-        )
+    shift = register.Register()
 
     # Coerce the image data into RegisterData.
     image = register.RegisterData(image)
@@ -95,7 +93,8 @@ def test_shift(image, template, p):
 
     step, _image, _search = shift.register(
         image,
-        template
+        template,
+        model.Shift()
         )
 
     assert np.allclose(p, step.p, atol=0.5), \
@@ -110,9 +109,7 @@ def test_affine(image, template, p):
     Tests image registration using a affine deformation model.
     """
 
-    affine = register.Register(
-        model.Affine,
-        )
+    affine = register.Register()
 
     # Coerce the image data into RegisterData.
     image = register.RegisterData(image)
@@ -120,7 +117,8 @@ def test_affine(image, template, p):
 
     step,  _image, _search = affine.register(
         image,
-        template
+        template,
+        model.Affine()
         )
 
     assert np.allclose(p, step.p, atol=0.5), \

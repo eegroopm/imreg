@@ -5,6 +5,7 @@ import numpy as np
 import logging
 
 import metric
+import model
 import sampler
 
 # Setup a loger.
@@ -25,31 +26,6 @@ Optimization break, maximum number of bad iterations exceeded.
 """
 
 
-class Coordinates(object):
-    """
-    Container for grid coordinates.
-
-    Attributes
-    ----------
-    domain : nd-array
-        Domain of the coordinate system.
-    tensor : nd-array
-        Grid coordinates.
-    homogenous : nd-array
-        `Homogenous` coordinate system representation of grid coordinates.
-    """
-
-    def __init__(self, domain, spacing=None):
-
-        self.domain = domain
-        self.tensor = np.mgrid[0.:domain[1], 0.:domain[3]]
-
-        self.homogenous = np.zeros((3, self.tensor[0].size))
-        self.homogenous[0] = self.tensor[1].flatten()
-        self.homogenous[1] = self.tensor[0].flatten()
-        self.homogenous[2] = 1.0
-
-
 class RegisterData(object):
     """
     Container for registration data.
@@ -67,9 +43,8 @@ class RegisterData(object):
         self.data = data.astype(np.double)
 
         if not coords:
-            self.coords = Coordinates(
+            self.coords = model.Coordinates(
                 [0, data.shape[0], 0, data.shape[1]],
-                spacing=spacing
                 )
         else:
             self.coords = coords
@@ -128,10 +103,6 @@ class Register(object):
     MAX_ITER = 200
     MAX_BAD = 5
 
-    def __init__(self, model):
-
-        self.model = model
-
     def __deltaP(self, J, e, alpha, p=None):
         """
         Computes the parameter update.
@@ -180,6 +151,7 @@ class Register(object):
     def register(self,
             image,
             template,
+            deformationModel,
             sampler=sampler.bilinear,
             method=metric.forwardsAdditive,
             p=None,
@@ -216,10 +188,7 @@ class Register(object):
             Fitting error.
         """
 
-        # Initialize the models, metric and sampler.
-        model = self.model(image.coords)
-
-        p = model.identity if p is None else p
+        p = deformationModel.identity if p is None else p
         deltaP = np.zeros_like(p)
 
         # Dampening factor.
@@ -233,11 +202,11 @@ class Register(object):
         for itteration in range(0, self.MAX_ITER):
 
             # Compute the inverse "warp" field.
-            warp = model.warp(p)
+            coords = model.warp(deformationModel, p, template.coords)
 
             # Sample the image using the inverse warp, the reshape is a
             # view.
-            warpedImage = sampler(image.data, warp)
+            warpedImage = sampler(image.data, coords.tensor)
 
             # Evaluate the error metric.
             e = method.error(warpedImage, template.data)
@@ -289,7 +258,7 @@ class Register(object):
             # Computes the derivative of the error with respect to model
             # parameters.
 
-            J = method.jacobian(warpedImage, model, p)
+            J = method.jacobian(warpedImage, deformationModel, p, coords)
 
             # Compute the parameter update vector.
             deltaP = self.__deltaP(J, e, alpha, p)

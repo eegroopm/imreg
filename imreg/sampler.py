@@ -29,7 +29,7 @@ def nearest(image, warp):
            Sampled array data.
     """
 
-    result = np.zeros_like(image, dtype=np.float64)
+    result = np.zeros_like(warp[0], dtype=np.float64)
 
     interpolation.nearest(
         warp.astype(np.float64),
@@ -57,7 +57,7 @@ def bilinear(image, warp):
            Sampled array data.
     """
 
-    result = np.zeros_like(image, dtype=np.float64)
+    result = np.zeros_like(warp[0], dtype=np.float64)
 
     interpolation.bilinear(
         warp.astype(np.float64),
