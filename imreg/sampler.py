@@ -90,4 +90,4 @@ def spline(image, warp):
         warp,
         order=3,
         mode='nearest'
-        ).flatten()
+        )
