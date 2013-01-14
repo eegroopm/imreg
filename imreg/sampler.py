@@ -14,7 +14,7 @@ except ImportError as error:
 
 def nearest(image, warp):
     """
-    Nearest-neighbour resampler
+    Nearest-neighbour interpolation.
 
     Parameters
     ----------
@@ -42,7 +42,7 @@ def nearest(image, warp):
 
 def bilinear(image, warp):
     """
-    Bilinear resampler
+    Bilinear interpolation.
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def bilinear(image, warp):
 
 def spline(image, warp):
     """
-    Spline resampler
+    Spline interpolation.
 
     Parameters
     ----------
