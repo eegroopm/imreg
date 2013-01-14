@@ -1,7 +1,10 @@
 """ A top level registration module """
 
 import numpy as np
+
+import collections
 import logging
+import metric
 
 # Setup a loger.
 log = logging.getLogger('imreg.register')
@@ -19,6 +22,16 @@ REGISTRATION_STOP = """
 Optimization break, maximum number of bad iterations exceeded.
 ================================================================================
 """
+
+# Define the image registration methods.
+
+Method = collections.namedtuple('method', 'jacobian error update')
+
+forwardsAdditiveApproach = Method(
+    metric.forwardsAdditiveJacobian,
+    metric.forwardsAdditiveError,
+    metric.forwardsAdditiveUpdate
+    )
 
 
 class Coordinates(object):
@@ -128,10 +141,9 @@ class Register(object):
     MAX_ITER = 200
     MAX_BAD = 5
 
-    def __init__(self, model, metric, sampler):
+    def __init__(self, model, sampler):
 
         self.model = model
-        self.metric = metric
         self.sampler = sampler
 
     def __deltaP(self, J, e, alpha, p=None):
@@ -179,7 +191,14 @@ class Register(object):
         """
         return alpha / 10. if decreasing else alpha * 10.
 
-    def register(self, image, template, p=None, alpha=None, verbose=False):
+    def register(self,
+            image,
+            template,
+            method=forwardsAdditiveApproach,
+            p=None,
+            alpha=None,
+            verbose=False
+            ):
         """
         Computes the registration between the image and template.
 
@@ -211,7 +230,6 @@ class Register(object):
         # Initialize the models, metric and sampler.
         model = self.model(image.coords)
         sampler = self.sampler(image.coords)
-        metric = self.metric()
 
         p = model.identity if p is None else p
         deltaP = np.zeros_like(p)
@@ -235,7 +253,7 @@ class Register(object):
             warpedImage.shape = image.data.shape
 
             # Evaluate the error metric.
-            e = metric.error(warpedImage, template.data)
+            e = method.error(warpedImage, template.data)
 
             # Cache the optimization step.
             searchStep = optStep(
@@ -284,7 +302,9 @@ class Register(object):
             # Computes the derivative of the error with respect to model
             # parameters.
 
-            J = metric.jacobian(model, warpedImage, p)
+            dPx, dPy = model.jacobian(p)
+
+            J = method.jacobian(warpedImage, (dPx, dPy))
 
             # Compute the parameter update vector.
             deltaP = self.__deltaP(J, e, alpha, p)
@@ -294,6 +314,6 @@ class Register(object):
                 break
 
             # Update the estimated parameters.
-            p += deltaP
+            p = method.update(p, deltaP)
 
         return bestStep, warpedImage, search

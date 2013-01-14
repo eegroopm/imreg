@@ -2,134 +2,53 @@
 
 import numpy as np
 
-class Metric(object):
-    """
-    Abstract similarity metric.
+# ==============================================================================
+# The critical components of the forwards additive methods.
+# ==============================================================================
 
-    Attributes
+
+def forwardsAdditiveJacobian(image, modelJacobian):
+    """
+    Computes the jacobian dP/dE.
+
+    Parameters
     ----------
-    METRIC : string
-        The type of similarity metric being used.
-    DESCRIPTION : string
-        A meaningful description of the metric used, with references where
-        appropriate.
+    model: deformation model
+        A particular deformation model.
+    warpedImage: nd-array
+        Input image after warping.
+    p : optional list
+        Current warp parameters
+
+    Returns
+    -------
+    jacobian: nd-array
+        A jacobain matrix. (m x n)
+            | where: m = number of image pixels,
+            |        p = number of parameters.
     """
 
-    METRIC=None
-    DESCRIPTION=None
+    grad = np.gradient(image)
+    dIx = grad[1].flatten()
+    dIy = grad[0].flatten()
 
-    def __init__(self):
-        pass
+    dPx, dPy = modelJacobian
 
-    def error(self, warpedImage, template):
-        """
-        Evaluates the metric.
-
-        Parameters
-        ----------
-        warpedImage: nd-array
-            Input image after warping.
-        template: nd-array
-            Template image.
-
-        Returns
-        -------
-        error: nd-array
-           Metric evaluated over all image coordinates.
-        """
-
-        raise NotImplementedError('')
-
-    def jacobian(self, model, warpedImage, p=None):
-        """
-        Computes the jacobian dP/dE.
-
-        Parameters
-        ----------
-        model: deformation model
-            A particular deformation model.
-        warpedImage: nd-array
-            Input image after warping.
-        p : optional list
-            Current warp parameters
-
-        Returns
-        -------
-        jacobian: nd-array
-           A derivative of model parameters with respect to the metric.
-        """
-        raise NotImplementedError('')
-
-    def __str__(self):
-        return 'Metric: {0} \n {1}'.format(
-            self.METRIC,
-            self.DESCRIPTION
-            )
+    J = np.zeros_like(dPx)
+    for index in range(0, dPx.shape[1]):
+        J[:, index] = dPx[:, index] * dIx + dPy[:, index] * dIy
+    return J
 
 
-class Residual(Metric):
-    """ Standard least squares metric """
+def forwardsAdditiveError(image, template):
+    """ Compute the forwards additive error """
+    return image.flatten() - template.flatten()
 
-    METRIC='residual'
 
-    DESCRIPTION="""
-        The residual which is computed as the difference between the
-        deformed image an the template:
+def forwardsAdditiveUpdate(p, deltaP):
+    """ Compute the forwards additive error """
+    return p + deltaP
 
-            (I(W(x;p)) - T)
-
-        """
-
-    def __init__(self):
-        Metric.__init__(self)
-
-    def jacobian(self, model, warpedImage, p=None):
-        """
-        Computes the jacobian dP/dE.
-
-        Parameters
-        ----------
-        model: deformation model
-            A particular deformation model.
-        warpedImage: nd-array
-            Input image after warping.
-        p : optional list
-            Current warp parameters
-
-        Returns
-        -------
-        jacobian: nd-array
-            A jacobain matrix. (m x n)
-                | where: m = number of image pixels,
-                |        p = number of parameters.
-        """
-
-        grad = np.gradient(warpedImage)
-
-        dIx = grad[1].flatten()
-        dIy = grad[0].flatten()
-
-        dPx, dPy = model.jacobian(p)
-
-        J = np.zeros_like(dPx)
-        for index in range(0, dPx.shape[1]):
-            J[:, index] = dPx[:, index] * dIx + dPy[:, index] * dIy
-        return J
-
-    def error(self, warpedImage, template):
-        """
-        Evaluates the residual metric.
-
-        Parameters
-        ----------
-        warpedImage: nd-array
-            Input image after warping.
-        template: nd-array
-            Template image.
-
-        Returns
-        -------
-        error: nd-array
-           Metric evaluated over all image coordinates.
-        """
-        return warpedImage.flatten() - template.flatten()
+# ==============================================================================
+# TODO: The critical components of the inverse compositional method.
+# ==============================================================================

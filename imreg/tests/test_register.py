@@ -89,7 +89,6 @@ def test_shift(image, template, p):
 
     shift = register.Register(
         model.Shift,
-        metric.Residual,
         sampler.Spline
         )
 
@@ -117,7 +116,6 @@ def test_affine(image, template, p):
 
     affine = register.Register(
         model.Affine,
-        metric.Residual,
         sampler.Spline
         )
 
