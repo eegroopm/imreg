@@ -4,7 +4,9 @@ import numpy as np
 
 import collections
 import logging
+
 import metric
+import sampler
 
 # Setup a loger.
 log = logging.getLogger('imreg.register')
@@ -141,10 +143,9 @@ class Register(object):
     MAX_ITER = 200
     MAX_BAD = 5
 
-    def __init__(self, model, sampler):
+    def __init__(self, model):
 
         self.model = model
-        self.sampler = sampler
 
     def __deltaP(self, J, e, alpha, p=None):
         """
@@ -194,6 +195,7 @@ class Register(object):
     def register(self,
             image,
             template,
+            sampler=sampler.bilinear,
             method=forwardsAdditiveApproach,
             p=None,
             alpha=None,
@@ -208,6 +210,8 @@ class Register(object):
             The floating image.
         template: nd-array
             The target image.
+        method: collection, optional.
+            The registration method (defaults to FrowardsAdditive)
         p: list (or nd-array), optional.
             First guess at fitting parameters.
         alpha: float
@@ -229,7 +233,6 @@ class Register(object):
 
         # Initialize the models, metric and sampler.
         model = self.model(image.coords)
-        sampler = self.sampler(image.coords)
 
         p = model.identity if p is None else p
         deltaP = np.zeros_like(p)
@@ -249,8 +252,7 @@ class Register(object):
 
             # Sample the image using the inverse warp, the reshape is a
             # view.
-            warpedImage = sampler.f(image.data, warp)
-            warpedImage.shape = image.data.shape
+            warpedImage = sampler(image.data, warp)
 
             # Evaluate the error metric.
             e = method.error(warpedImage, template.data)

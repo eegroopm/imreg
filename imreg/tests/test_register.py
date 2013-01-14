@@ -3,10 +3,10 @@ import numpy as np
 import scipy.ndimage as nd
 import scipy.misc as misc
 
-from imreg import model, metric, register, sampler
+from imreg import model, register, sampler
 
 
-def warp(image, p, model, sampler):
+def warp(image, p, model):
     """
     Warps an image.
     """
@@ -15,11 +15,10 @@ def warp(image, p, model, sampler):
         )
 
     model = model(coords)
-    sampler = sampler(coords)
 
-    return sampler.f(image,
-                     model.warp(p)
-                    ).reshape(image.shape)
+    warpedImage = sampler.bilinear(image, model.warp(p))
+
+    return warpedImage
 
 
 def pytest_generate_tests(metafunc):
@@ -40,7 +39,6 @@ def pytest_generate_tests(metafunc):
                 image,
                 p,
                 model.Shift,
-                sampler.Spline
                 )
 
             metafunc.addcall(
@@ -58,15 +56,14 @@ def pytest_generate_tests(metafunc):
     if metafunc.function is test_affine:
 
         # test the displacement component
-        for displacement in np.arange(-10.,10.):
+        for displacement in np.arange(-10., 10.):
 
             p = np.array([0., 0., 0., 0., displacement, displacement])
 
             template = warp(
                 image,
                 p,
-                model.Affine,
-                sampler.Spline
+                model.Affine
                 )
 
             metafunc.addcall(
@@ -88,8 +85,7 @@ def test_shift(image, template, p):
     """
 
     shift = register.Register(
-        model.Shift,
-        sampler.Spline
+        model.Shift
         )
 
     # Coerce the image data into RegisterData.
@@ -116,7 +112,6 @@ def test_affine(image, template, p):
 
     affine = register.Register(
         model.Affine,
-        sampler.Spline
         )
 
     # Coerce the image data into RegisterData.
