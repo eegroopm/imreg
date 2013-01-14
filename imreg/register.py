@@ -302,9 +302,7 @@ class Register(object):
             # Computes the derivative of the error with respect to model
             # parameters.
 
-            dPx, dPy = model.jacobian(p)
-
-            J = method.jacobian(warpedImage, (dPx, dPy))
+            J = method.jacobian(warpedImage, model, p)
 
             # Compute the parameter update vector.
             deltaP = self.__deltaP(J, e, alpha, p)
@@ -314,6 +312,6 @@ class Register(object):
                 break
 
             # Update the estimated parameters.
-            p = method.update(p, deltaP)
+            p = method.update(p, deltaP, model)
 
         return bestStep, warpedImage, search

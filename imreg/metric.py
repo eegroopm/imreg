@@ -7,7 +7,7 @@ import numpy as np
 # ==============================================================================
 
 
-def forwardsAdditiveJacobian(image, modelJacobian):
+def forwardsAdditiveJacobian(image, model, p):
     """
     Computes the jacobian dP/dE.
 
@@ -32,7 +32,7 @@ def forwardsAdditiveJacobian(image, modelJacobian):
     dIx = grad[1].flatten()
     dIy = grad[0].flatten()
 
-    dPx, dPy = modelJacobian
+    dPx, dPy = model.jacobian(p)
 
     J = np.zeros_like(dPx)
     for index in range(0, dPx.shape[1]):
@@ -45,7 +45,7 @@ def forwardsAdditiveError(image, template):
     return image.flatten() - template.flatten()
 
 
-def forwardsAdditiveUpdate(p, deltaP):
+def forwardsAdditiveUpdate(p, deltaP, model=None):
     """ Compute the forwards additive error """
     return p + deltaP
 
