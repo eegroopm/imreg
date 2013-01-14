@@ -2,7 +2,6 @@
 
 import numpy as np
 
-import collections
 import logging
 
 import metric
@@ -24,16 +23,6 @@ REGISTRATION_STOP = """
 Optimization break, maximum number of bad iterations exceeded.
 ================================================================================
 """
-
-# Define the image registration methods.
-
-Method = collections.namedtuple('method', 'jacobian error update')
-
-forwardsAdditiveApproach = Method(
-    metric.forwardsAdditiveJacobian,
-    metric.forwardsAdditiveError,
-    metric.forwardsAdditiveUpdate
-    )
 
 
 class Coordinates(object):
@@ -134,10 +123,6 @@ class Register(object):
     ----------
     model: class
         A `deformation` model class definition.
-    metric: class
-        A `similarity` metric class definition.
-    sampler: class
-        A `sampler` class definition.
     """
 
     MAX_ITER = 200
@@ -196,7 +181,7 @@ class Register(object):
             image,
             template,
             sampler=sampler.bilinear,
-            method=forwardsAdditiveApproach,
+            method=metric.forwardsAdditive,
             p=None,
             alpha=None,
             verbose=False

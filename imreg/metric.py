@@ -1,9 +1,15 @@
 """ A collection of image similarity metrics. """
 
+import collections
+
 import numpy as np
 
+# Container for registration methods:
+
+Method = collections.namedtuple('method', 'jacobian error update')
+
 # ==============================================================================
-# The critical components of the forwards additive methods.
+# Forwards additive:
 # ==============================================================================
 
 
@@ -49,6 +55,14 @@ def forwardsAdditiveUpdate(p, deltaP, model=None):
     """ Compute the forwards additive error """
     return p + deltaP
 
+# Define the forwards additive approach:
+
+forwardsAdditive = Method(
+    forwardsAdditiveJacobian,
+    forwardsAdditiveError,
+    forwardsAdditiveUpdate
+    )
+
 # ==============================================================================
-# TODO: The critical components of the inverse compositional method.
+# TODO: Inverse compositional.
 # ==============================================================================
