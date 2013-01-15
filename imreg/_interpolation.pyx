@@ -4,7 +4,6 @@
 #cython: wraparound=False
 
 cimport numpy as cnp
-import numpy as np
 
 from libc.math cimport ceil, floor
 
@@ -15,17 +14,21 @@ def nearest(
     ):
     """ Computes a nearest neighbor sample """
 
-    cdef int rows = warp[0].shape[1]
-    cdef int cols = warp[0].shape[0]
+    cdef int out_rows = warp[0].shape[1]
+    cdef int out_cols = warp[0].shape[0]
+
+    cdef int img_rows = image.shape[1]
+    cdef int img_cols = image.shape[0]
+
     cdef double rhat, chat
     cdef int r, c
 
-    for r in xrange(rows):
-       for c in xrange(cols):
+    for r in xrange(out_rows):
+       for c in xrange(out_cols):
             output[r][c] = nearest_neighbour_interpolation(
                                 <double*> image.data,
-                                rows,
-                                cols,
+                                img_rows,
+                                img_cols,
                                 warp[0, r, c],
                                 warp[1, r, c],
                                 'C',
@@ -41,17 +44,22 @@ def bilinear(
     ):
     """ Computes a bilinear sample """
 
-    cdef int rows = warp[0].shape[1]
-    cdef int cols = warp[0].shape[0]
+    cdef int out_rows = warp[0].shape[1]
+    cdef int out_cols = warp[0].shape[0]
+
+    cdef int img_rows = image.shape[1]
+    cdef int img_cols = image.shape[0]
+
     cdef double rhat, chat
     cdef int r, c
 
-    for r in xrange(rows):
-       for c in xrange(cols):
+
+    for r in xrange(out_rows):
+       for c in xrange(out_cols):
             output[r][c] = bilinear_interpolation(
                                 <double*> image.data,
-                                rows,
-                                cols,
+                                img_rows,
+                                img_cols,
                                 warp[0, r, c],
                                 warp[1, r, c],
                                 'C',
