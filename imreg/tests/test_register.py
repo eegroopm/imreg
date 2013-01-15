@@ -14,7 +14,7 @@ def warp(image, p, deformationModel):
         [0, image.shape[0], 0, image.shape[1]]
         )
 
-    deformedCoords = model.warp(deformationModel, p, coords)
+    deformedCoords = deformationModel(coords, p)
 
     warpedImage = sampler.bilinear(image, deformedCoords.tensor)
 
@@ -91,7 +91,7 @@ def test_shift(image, template, p):
     template = register.RegisterData(template)
 
 
-    step, _image, _search = shift.register(
+    step, _image, _coords, _search = shift.register(
         image,
         template,
         model.Shift()
@@ -115,7 +115,7 @@ def test_affine(image, template, p):
     image = register.RegisterData(image)
     template = register.RegisterData(template)
 
-    step,  _image, _search = affine.register(
+    step,  _image, _coords, _search = affine.register(
         image,
         template,
         model.Affine()
