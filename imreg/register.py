@@ -151,7 +151,7 @@ class Register(object):
     def register(self,
             image,
             template,
-            deformationModel,
+            tform,
             sampler=sampler.bilinear,
             method=metric.forwardsAdditive,
             p=None,
@@ -167,6 +167,8 @@ class Register(object):
             The floating image.
         template: nd-array
             The target image.
+        tform: deformation (class)
+            The deformation model (shift, affine, projective)
         method: collection, optional.
             The registration method (defaults to FrowardsAdditive)
         p: list (or nd-array), optional.
@@ -188,7 +190,7 @@ class Register(object):
             Fitting error.
         """
 
-        p = deformationModel.identity if p is None else p
+        p = tform.identity if p is None else p
         deltaP = np.zeros_like(p)
 
         # Dampening factor.
@@ -202,7 +204,7 @@ class Register(object):
         for itteration in range(0, self.MAX_ITER):
 
             # Compute the inverse "warp" field.
-            coords = model.warp(deformationModel, p, template.coords)
+            coords = tform(template.coords, p)
 
             # Sample the image using the inverse warp, the reshape is a
             # view.
@@ -258,7 +260,7 @@ class Register(object):
             # Computes the derivative of the error with respect to model
             # parameters.
 
-            J = method.jacobian(warpedImage, deformationModel, p, coords)
+            J = method.jacobian(warpedImage, tform, p, coords)
 
             # Compute the parameter update vector.
             deltaP = self.__deltaP(J, e, alpha, p)
