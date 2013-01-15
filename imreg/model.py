@@ -35,10 +35,10 @@ class Coordinates(object):
     @staticmethod
     def fromTensor(tensor):
         domain = [
-            tensor[0].min(),
-            tensor[0].max(),
             tensor[1].min(),
-            tensor[1].max()
+            tensor[1].max(),
+            tensor[0].min(),
+            tensor[0].max()
             ]
         return Coordinates(domain, tensor)
 
