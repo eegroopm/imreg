@@ -272,4 +272,5 @@ class Register(object):
             # Update the estimated parameters.
             p = method.update(p, deltaP, model)
 
-        return bestStep, warpedImage, coords, search
+        return bestStep, search
+

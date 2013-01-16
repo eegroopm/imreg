@@ -91,7 +91,7 @@ def test_shift(image, template, p):
     template = register.RegisterData(template)
 
 
-    step, _image, _coords, _search = shift.register(
+    step, _search = shift.register(
         image,
         template,
         model.Shift()
@@ -115,7 +115,7 @@ def test_affine(image, template, p):
     image = register.RegisterData(image)
     template = register.RegisterData(template)
 
-    step,  _image, _coords, _search = affine.register(
+    step, _search = affine.register(
         image,
         template,
         model.Affine()
