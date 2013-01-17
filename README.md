@@ -1,18 +1,18 @@
 Image Registration (imreg)
 ==========================
 
-The "imreg" package implements the fast image registration method called "Inverse Compositional Image Alignment" and works for images and templates of the same modality.
+The "imreg" package implements fast image registration methods using Python, Cython and numerical tools (scipy, numpy). 
 
 This package uses `semantic versioning <http://semver.org/>`.
 
 References:
------------------
+-----------
 
     S. Baker and I. Matthews. Equivalence and eﬃciency of image alignment algorithms. 
     In Proceedings of the 2001 IEEE Conference on Computer Vision and Pattern Recognition, 
     Volume 1, Pages 1090 – 1097, December 2001.
 
-A very indepth (3 part series with Matlab implementations):
+A very comprehensive 3 part series with Matlab implementations):
 
     http://www.ri.cmu.edu/research_project_detail.html?project_id=515&menu_id=261
 
