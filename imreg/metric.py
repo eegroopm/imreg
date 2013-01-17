@@ -42,13 +42,13 @@ def forwardsAdditiveJacobian(image, model, p, coords):
 
     J = np.zeros_like(dPx)
     for index in range(0, dPx.shape[1]):
-        J[:, index] = dPx[:, index] * dIx + dPy[:, index] * dIy
+        J[:, index] = (dPx[:, index] * dIx) + (dPy[:, index] * dIy)
     return J
 
 
 def forwardsAdditiveError(image, template):
     """ Compute the forwards additive error """
-    return image.flatten() - template.flatten()
+    return (image - template).flatten()
 
 
 def forwardsAdditiveUpdate(p, deltaP, model=None):

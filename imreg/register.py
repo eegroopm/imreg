@@ -180,14 +180,10 @@ class Register(object):
 
         Returns
         -------
-        p: nd-array.
-            Model parameters.
-        warp: nd-array.
-            (inverse) Warp field estimate.
-        warpedImage: nd-array
-            The re-sampled image.
-        error: float
-            Fitting error.
+        step: optimization step.
+            The best optimization step (after convergence).
+        search: list (of optimization steps)
+            The set of optimization steps (good and bad)
         """
 
         p = tform.identity if p is None else p
@@ -240,10 +236,7 @@ class Register(object):
 
                 searchStep.decreasing = (searchStep.error < bestStep.error)
 
-                alpha = self.__dampening(
-                    alpha,
-                    searchStep.decreasing
-                    )
+                alpha = self.__dampening(alpha, searchStep.decreasing)
 
                 if searchStep.decreasing:
                     bestStep = searchStep
@@ -260,7 +253,7 @@ class Register(object):
             # Computes the derivative of the error with respect to model
             # parameters.
 
-            J = method.jacobian(warpedImage, tform, p, coords)
+            J = method.jacobian(warpedImage, tform, p, template.coords)
 
             # Compute the parameter update vector.
             deltaP = self.__deltaP(J, e, alpha, p)
