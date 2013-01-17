@@ -71,6 +71,15 @@ class Shift(object):
     def identity(self):
         return np.zeros(2)
 
+    def matrixForm(self, p):
+        T = np.eye(3, 3)
+        T[0, 2] = p[0]
+        T[1, 2] = p[1]
+        return T
+
+    def vectorForm(self, p):
+        return p.diagonal()
+
     def transform(self, parameters, coords):
         """
         A "shift" transformation of coordinates.
@@ -129,6 +138,23 @@ class Affine(object):
     def identity(self):
         return np.zeros(6)
 
+    def matrixForm(self, p):
+        return np.array([
+            [p[0] + 1.0, p[2],       p[4]],
+            [p[1],       p[3] + 1.0, p[5]],
+            [0,          0,            1]
+            ])
+
+    def vectorForm(self, p):
+        return np.array(
+            [p[0, 0] - 1.0,
+             p[1, 0],
+             p[0, 1],
+             p[1, 1] - 1.,
+             p[0, 2],
+             p[1, 2],
+             ])
+
     def transform(self, p, coords):
         """
         An "affine" transformation of coordinates.
@@ -144,11 +170,7 @@ class Affine(object):
            Deformation coordinates.
         """
 
-        T = np.array([
-                      [p[0] + 1.0, p[2],       p[4]],
-                      [p[1],       p[3] + 1.0, p[5]],
-                      [0,          0,          1]
-                      ])
+        T = self.matrixForm(p)
 
         displacement = np.dot(T, coords.homogenous)
 
@@ -193,6 +215,26 @@ class Projective(object):
     @property
     def identity(self):
         return np.zeros(9)
+
+    def matrixForm(self, p):
+        return np.array([
+            [p[0] + 1.0, p[2],       p[4]],
+            [p[1],       p[3] + 1.0, p[5]],
+            [p[6],       p[7],       p[8] + 1.0]
+            ])
+
+    def vectorForm(self, p):
+        return np.array(
+            [p[0, 0] - 1.0,
+             p[1, 0],
+             p[0, 1],
+             p[1, 1] - 1.,
+             p[0, 2],
+             p[1, 2],
+             p[2, 0],
+             p[2, 1],
+             p[2, 2] - 1
+            ])
 
     def transform(self, p, coords):
         """

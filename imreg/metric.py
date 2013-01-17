@@ -13,7 +13,7 @@ Method = collections.namedtuple('method', 'jacobian error update')
 # ==============================================================================
 
 
-def forwardsAdditiveJacobian(image, model, p, coords):
+def forwardsAdditiveJacobian(image, template, model, p):
     """
     Computes the jacobian dP/dE.
 
@@ -38,7 +38,7 @@ def forwardsAdditiveJacobian(image, model, p, coords):
     dIx = grad[1].flatten()
     dIy = grad[0].flatten()
 
-    dPx, dPy = model.jacobian(coords, p)
+    dPx, dPy = model.jacobian(template.coords, p)
 
     J = np.zeros_like(dPx)
     for index in range(0, dPx.shape[1]):
@@ -64,5 +64,80 @@ forwardsAdditive = Method(
     )
 
 # ==============================================================================
-# TODO: Inverse compositional.
+# Forwards compositional.
 # ==============================================================================
+
+
+def forwardsCompositionalError(image, template):
+    """ Compute the forwards additive error """
+    return (template - image).flatten()
+
+
+def forwardsCompositionalUpdate(p, deltaP, tform):
+    """ Compute the forwards additive error """
+    return tform.vectorForm(np.dot(tform.matrixForm(p), tform.matrixForm(deltaP)))
+
+forwardsCompositional = Method(
+    forwardsAdditiveJacobian,
+    forwardsCompositionalError,
+    forwardsCompositionalUpdate
+    )
+
+
+# ==============================================================================
+# Inverse compositional.
+# ==============================================================================
+
+
+def inverseCompositionalJacobian(image, template, model, p):
+    """
+    Computes the jacobian dP/dE.
+
+    Parameters
+    ----------
+    model: deformation model
+        A particular deformation model.
+    warpedImage: nd-array
+        Input image after warping.
+    p : optional list
+        Current warp parameters
+
+    Returns
+    -------
+    jacobian: nd-array
+        A jacobain matrix. (m x n)
+            | where: m = number of image pixels,
+            |        p = number of parameters.
+    """
+
+    grad = np.gradient(template.data)
+    dIx = grad[1].flatten()
+    dIy = grad[0].flatten()
+
+    dPx, dPy = model.jacobian(template.coords, p)
+
+    J = np.zeros_like(dPx)
+    for index in range(0, dPx.shape[1]):
+        J[:, index] = (dPx[:, index] * dIx) + (dPy[:, index] * dIy)
+    return J
+
+
+def inverseCompositionalError(image, template):
+    """ Compute the inverse additive error """
+    return (image - template).flatten()
+
+
+def inverseCompositionalUpdate(p, deltaP, tform):
+    """ Compute the inverse compositional error """
+
+    T = np.dot(tform.matrixForm(p), np.linalg.inv(tform.matrixForm(deltaP)))
+
+    return tform.vectorForm(T)
+
+
+inverseCompositional = Method(
+    inverseCompositionalJacobian,
+    inverseCompositionalError,
+    inverseCompositionalUpdate
+    )
+
