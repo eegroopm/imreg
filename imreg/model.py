@@ -215,7 +215,7 @@ class Projective(object):
                 [p[6],       p[7],       p[8] + 1.0]
                 ])
 
-        displacement = np.dot(np.linalg.inv(T), coords.homogenous)
+        displacement = np.dot(T, coords.homogenous)
 
         shape = coords.tensor[0].shape
 
