@@ -87,8 +87,8 @@ class Shift(object):
         """
 
         T = np.eye(3, 3)
-        T[0, 2] = -parameters[0]
-        T[1, 2] = -parameters[1]
+        T[0, 2] = parameters[0]
+        T[1, 2] = parameters[1]
 
         displacement = np.dot(T, coords.homogenous)
 
@@ -150,7 +150,7 @@ class Affine(object):
                       [0,          0,          1]
                       ])
 
-        displacement = np.dot(np.linalg.inv(T), coords.homogenous)
+        displacement = np.dot(T, coords.homogenous)
 
         shape = coords.tensor[0].shape
 

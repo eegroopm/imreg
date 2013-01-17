@@ -48,7 +48,7 @@ def forwardsAdditiveJacobian(image, model, p, coords):
 
 def forwardsAdditiveError(image, template):
     """ Compute the forwards additive error """
-    return (image - template).flatten()
+    return (template - image).flatten()
 
 
 def forwardsAdditiveUpdate(p, deltaP, model=None):
