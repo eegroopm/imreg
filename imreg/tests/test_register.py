@@ -6,19 +6,14 @@ import scipy.misc as misc
 from imreg import model, register, sampler
 
 
-def warp(image, p, deformationModel):
+def deform(image, p, deformationModel):
     """
     Warps an image.
     """
-    coords = model.Coordinates(
-        [0, image.shape[0], 0, image.shape[1]]
-        )
 
-    deformedCoords = deformationModel(coords, p)
+    coords = model.Coordinates([0, image.shape[0], 0, image.shape[1]])
 
-    warpedImage = sampler.bilinear(image, deformedCoords.tensor)
-
-    return warpedImage
+    return sampler.bilinear(image, deformationModel(coords, p).tensor)
 
 
 def pytest_generate_tests(metafunc):
@@ -31,21 +26,14 @@ def pytest_generate_tests(metafunc):
 
     if metafunc.function is test_shift:
 
-        for displacement in np.arange(-10.,10.):
+        for displacement in np.arange(-10., 10.):
 
             p = np.array([displacement, displacement])
 
-            template = warp(
-                image,
-                p,
-                model.Shift(),
-                )
+            template = deform(image, p, model.Shift())
 
             metafunc.addcall(
-                id='dx={}, dy={}'.format(
-                    p[0],
-                    p[1]
-                    ),
+                id='dx={}, dy={}'.format(p[0], p[1]),
                 funcargs=dict(
                     image=image,
                     template=template,
@@ -60,17 +48,10 @@ def pytest_generate_tests(metafunc):
 
             p = np.array([0., 0., 0., 0., displacement, displacement])
 
-            template = warp(
-                image,
-                p,
-                model.Affine()
-                )
+            template = deform(image, p, model.Affine())
 
             metafunc.addcall(
-                    id='dx={}, dy={}'.format(
-                        p[4],
-                        p[5]
-                        ),
+                    id='dx={}, dy={}'.format(p[4], p[5]),
                     funcargs=dict(
                         image=image,
                         template=template,
@@ -90,12 +71,7 @@ def test_shift(image, template, p):
     image = register.RegisterData(image)
     template = register.RegisterData(template)
 
-
-    step, _search = shift.register(
-        image,
-        template,
-        model.Shift()
-        )
+    step, _search = shift.register(image, template, model.Shift())
 
     assert np.allclose(p, step.p, atol=0.5), \
         "Estimated p: {} not equal to p: {}".format(
@@ -115,11 +91,7 @@ def test_affine(image, template, p):
     image = register.RegisterData(image)
     template = register.RegisterData(template)
 
-    step, _search = affine.register(
-        image,
-        template,
-        model.Affine()
-        )
+    step, _search = affine.register(image, template, model.Affine())
 
     assert np.allclose(p, step.p, atol=0.5), \
         "Estimated p: {} not equal to p: {}".format(
