@@ -64,9 +64,9 @@ class Shift(object):
 
     def matrix(self, p):
         return np.array([
-            (1, 0, p[0]),
-            (0, 1, p[1]),
-            (0, 0, 1)
+            (1.0, 0.0, p[0]),
+            (0.0, 1.0, p[1]),
+            (0.0, 0.0, 1.0)
             ])
 
     def vector(self, H):
@@ -94,8 +94,8 @@ class Shift(object):
         dx = np.zeros((coords.tensor[0].size, 2))
         dy = np.zeros((coords.tensor[0].size, 2))
 
-        dx[:, 0] = 1
-        dy[:, 1] = 1
+        dx[:, 0] = 1.0
+        dy[:, 1] = 1.0
 
         return (dx, dy)
 
@@ -124,7 +124,7 @@ class Affine(object):
         return np.array([
             [p[0] + 1.0, p[2],       p[4]],
             [p[1],       p[3] + 1.0, p[5]],
-            [0,          0,            1]
+            [0.0,        0.0,         1.0]
             ])
 
     def vector(self, H):
