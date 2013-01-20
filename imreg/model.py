@@ -158,7 +158,7 @@ class Affine(object):
         x, y = coords.xy
 
         dx = np.zeros((x.size, 6))
-        dy = np.zeros((x, 6))
+        dy = np.zeros((x.size, 6))
 
         dx[:, 0] = x
         dx[:, 2] = y
