@@ -10,7 +10,7 @@ from scipy import ndimage
 Method = collections.namedtuple('method', 'jacobian error update')
 
 
-def gradient(image, variance=0.5):
+def gradient(image, variance=0.1):
     """ Computes the image gradient """
     grad = np.gradient(image)
 

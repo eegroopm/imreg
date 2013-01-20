@@ -78,7 +78,7 @@ class Shift(object):
         return T
 
     def vectorForm(self, p):
-        return p.diagonal()
+        return np.array([p[0, 2], p[1, 2]])
 
     def transform(self, parameters, coords):
         """
