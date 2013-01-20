@@ -199,11 +199,10 @@ class Register(object):
 
         for itteration in range(0, self.MAX_ITER):
 
-            # Compute the inverse "warp" field.
-            coords = tform(template.coords, p)
+            # Compute the transformed coordinates.
+            coords = tform(p, template.coords)
 
-            # Sample the image using the inverse warp, the reshape is a
-            # view.
+            # Sample to the template frame using the transformed coordinates.
             warpedImage = sampler(image.data, coords.tensor)
 
             # Evaluate the error metric.

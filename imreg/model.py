@@ -1,7 +1,6 @@
 """ A collection of deformation models. """
 
 import numpy as np
-import scipy.signal as signal
 
 
 class Coordinates(object):
@@ -34,25 +33,17 @@ class Coordinates(object):
 
     @staticmethod
     def fromTensor(tensor):
-        domain = [
-            tensor[1].min(),
-            tensor[1].max(),
-            tensor[0].min(),
-            tensor[0].max()
-            ]
+        domain = [tensor[1].min(), tensor[1].max(), tensor[0].min(), tensor[0].max()]
         return Coordinates(domain, tensor)
 
     @property
     def xy(self):
         return self.homogenous[0], self.homogenous[1]
 
-    @property
-    def bbox(self):
-        tl = self.homogenous[0][0], self.homogenous[1][0]
-        tr = self.homogenous[0][-1], self.homogenous[1][0]
-        bl = self.homogenous[0][0], self.homogenous[1][-1]
-        br = self.homogenous[0][-1], self.homogenous[1][-1]
-        return (tl, tr, bl, br)
+
+# ==============================================================================
+# 2 - DOF
+# ==============================================================================
 
 
 class Shift(object):
@@ -64,42 +55,29 @@ class Shift(object):
     Unifying Framework. Int. J. Comput. Vision 56, 3 (February 2004).
     """
 
-    def __call__(self, coords, parameters):
-        return Coordinates.fromTensor(self.transform(parameters, coords))
+    def __call__(self, p, coords):
+        return Coordinates.fromTensor(self.transform(p, coords))
 
     @property
     def identity(self):
         return np.zeros(2)
 
-    def matrixForm(self, p):
-        T = np.eye(3, 3)
-        T[0, 2] = p[0]
-        T[1, 2] = p[1]
-        return T
+    def matrix(self, p):
+        return np.array([
+            (1, 0, p[0]),
+            (0, 1, p[1]),
+            (0, 0, 1)
+            ])
 
-    def vectorForm(self, p):
-        return np.array([p[0, 2], p[1, 2]])
+    def vector(self, H):
+        return H[0:2, 2]
 
-    def transform(self, parameters, coords):
+    def transform(self, p, coords):
         """
         A "shift" transformation of coordinates.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        coords: nd-array
-           Deformation coordinates.
         """
 
-        T = np.eye(3, 3)
-        T[0, 2] = parameters[0]
-        T[1, 2] = parameters[1]
-
-        displacement = np.dot(T, coords.homogenous)
+        displacement = np.dot(self.matrix(p), coords.homogenous)
 
         shape = coords.tensor[0].shape
 
@@ -121,6 +99,10 @@ class Shift(object):
 
         return (dx, dy)
 
+# ==============================================================================
+# 6 - DOF
+# ==============================================================================
+
 
 class Affine(object):
     """
@@ -131,49 +113,36 @@ class Affine(object):
     Unifying Framework. Int. J. Comput. Vision 56, 3 (February 2004).
     """
 
-    def __call__(self, coords, parameters):
-        return Coordinates.fromTensor(self.transform(parameters, coords))
+    def __call__(self, p, coords):
+        return Coordinates.fromTensor(self.transform(p, coords))
 
     @property
     def identity(self):
         return np.zeros(6)
 
-    def matrixForm(self, p):
+    def matrix(self, p):
         return np.array([
             [p[0] + 1.0, p[2],       p[4]],
             [p[1],       p[3] + 1.0, p[5]],
             [0,          0,            1]
             ])
 
-    def vectorForm(self, p):
+    def vector(self, H):
         return np.array(
-            [p[0, 0] - 1.0,
-             p[1, 0],
-             p[0, 1],
-             p[1, 1] - 1.,
-             p[0, 2],
-             p[1, 2],
+            [H[0, 0] - 1.0,
+             H[1, 0],
+             H[0, 1],
+             H[1, 1] - 1.0,
+             H[0, 2],
+             H[1, 2],
              ])
 
     def transform(self, p, coords):
         """
         An "affine" transformation of coordinates.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        coords: nd-array
-           Deformation coordinates.
         """
 
-        T = self.matrixForm(p)
-
-        displacement = np.dot(T, coords.homogenous)
-
+        displacement = np.dot(self.matrix(p), coords.homogenous)
         shape = coords.tensor[0].shape
 
         return np.array(
@@ -186,21 +155,27 @@ class Affine(object):
         coordinates.
         """
 
-        dx = np.zeros((coords.tensor[0].size, 6))
-        dy = np.zeros((coords.tensor[0].size, 6))
+        x, y = coords.xy
 
-        dx[:, 0] = coords.tensor[1].flatten()
-        dx[:, 2] = coords.tensor[0].flatten()
+        dx = np.zeros((x.size, 6))
+        dy = np.zeros((x, 6))
+
+        dx[:, 0] = x
+        dx[:, 2] = y
         dx[:, 4] = 1.0
 
-        dy[:, 1] = coords.tensor[1].flatten()
-        dy[:, 3] = coords.tensor[0].flatten()
+        dy[:, 1] = x
+        dy[:, 3] = y
         dy[:, 5] = 1.0
 
         return (dx, dy)
 
+# ==============================================================================
+# 8 - DOF
+# ==============================================================================
 
-class Projective(object):
+
+class Homography(object):
     """
     Applies the projective coordinate transformation. Follows the derivations
     shown in:
@@ -209,58 +184,39 @@ class Projective(object):
     Unifying Framework. Int. J. Comput. Vision 56, 3 (February 2004).
     """
 
-    def __call__(self, coords, parameters):
-        return Coordinates.fromTensor(self.transform(parameters, coords))
+    def __call__(self, p, coords):
+        return Coordinates.fromTensor(self.transform(p, coords))
 
     @property
     def identity(self):
         return np.zeros(9)
 
-    def matrixForm(self, p):
+    def matrix(self, p):
         return np.array([
-            [p[0] + 1.0, p[2],       p[4]],
-            [p[1],       p[3] + 1.0, p[5]],
-            [p[6],       p[7],       p[8] + 1.0]
+            [p[0] + 1.0, p[3],       p[6]],
+            [p[1],       p[4] + 1.0, p[7]],
+            [p[2],       p[5],        1.0]
             ])
 
-    def vectorForm(self, p):
+    def vector(self, H):
         return np.array(
-            [p[0, 0] - 1.0,
-             p[1, 0],
-             p[0, 1],
-             p[1, 1] - 1.,
-             p[0, 2],
-             p[1, 2],
-             p[2, 0],
-             p[2, 1],
-             p[2, 2] - 1
-            ])
+            [H[0, 0] - 1.0,
+             H[1, 0],
+             H[2, 0],
+             H[0, 1],
+             H[1, 1] - 1.0,
+             H[2, 1],
+             H[0, 2],
+             H[1, 2],
+             ])
 
     def transform(self, p, coords):
         """
         An "projective" transformation of coordinates.
-
-        Parameters
-        ----------
-        parameters: nd-array
-            Model parameters.
-
-        Returns
-        -------
-        coords: nd-array
-           Deformation coordinates.
         """
 
-        T = np.array([
-                [p[0] + 1.0, p[2],       p[4]],
-                [p[1],       p[3] + 1.0, p[5]],
-                [p[6],       p[7],       p[8] + 1.0]
-                ])
-
-        displacement = np.dot(T, coords.homogenous)
-
+        displacement = np.dot(self.matrix(p), coords.homogenous)
         shape = coords.tensor[0].shape
-
         return np.array(
             [displacement[1].reshape(shape), displacement[0].reshape(shape)]
             )
@@ -270,25 +226,4 @@ class Projective(object):
         Evaluates the derivative of deformation model with respect to the
         coordinates.
         """
-
-        dx = np.zeros((coords.tensor[0].size, 9))
-        dy = np.zeros((coords.tensor[0].size, 9))
-
-        x = coords.tensor[1].flatten()
-        y = coords.tensor[0].flatten()
-
-        dx[:, 0] = x / (p[6] * x + p[7] * y + p[8] + 1)
-        dx[:, 2] = y / (p[6] * x + p[7] * y + p[8] + 1)
-        dx[:, 4] = 1.0 / (p[6] * x + p[7] * y + p[8] + 1)
-        dx[:, 6] = x * (p[0] * x + p[2] * y + p[4] + x) / (p[6] * x + p[7] * y + p[8] + 1)**2
-        dx[:, 7] = y * (p[0] * x + p[2] * y + p[4] + x) / (p[6] * x + p[7] * y + p[8] + 1)**2
-        dx[:, 8] = 1.0 * (p[0] * x + p[2] * y + p[4] + x) / (p[6] * x + p[7] * y + p[8] + 1)**2
-
-        dy[:, 1] = x / (p[6] * x + p[7] * y + p[8] + 1)
-        dy[:, 3] = y / (p[6] * x + p[7] * y + p[8] + 1)
-        dy[:, 5] = 1.0 / (p[6] * x + p[7] * y + p[8] + 1)
-        dy[:, 6] = x * (p[1] * x + p[3] * y + p[5] + y) / (p[6] * x + p[7] * y + p[8] + 1)**2
-        dy[:, 7] = y * (p[1] * x + p[3] * y + p[5] + y) / (p[6] * x + p[7] * y + p[8] + 1)**2
-        dy[:, 8] = 1.0 * (p[1] * x + p[3] * y + p[5] + y) / (p[6] * x + p[7] * y + p[8] + 1)**2
-
-        return (dx, dy)
+        raise NotImplementedError('Needs work here!')

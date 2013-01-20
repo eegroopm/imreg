@@ -13,7 +13,7 @@ def deform(image, p, deformationModel):
 
     coords = model.Coordinates([0, image.shape[0], 0, image.shape[1]])
 
-    return sampler.bilinear(image, deformationModel(coords, p).tensor)
+    return sampler.bilinear(image, deformationModel(p, coords).tensor)
 
 
 def pytest_generate_tests(metafunc):

@@ -84,7 +84,8 @@ def forwardsCompositionalError(image, template):
 
 def forwardsCompositionalUpdate(p, deltaP, tform):
     """ Compute the forwards additive error """
-    return tform.vectorForm(np.dot(tform.matrixForm(p), tform.matrixForm(deltaP)))
+    return tform.vector(np.dot(tform.matrix(p), tform.matrix(deltaP)))
+
 
 forwardsCompositional = Method(
     forwardsAdditiveJacobian,
@@ -137,9 +138,9 @@ def inverseCompositionalError(image, template):
 def inverseCompositionalUpdate(p, deltaP, tform):
     """ Compute the inverse compositional error """
 
-    T = np.dot(tform.matrixForm(p), np.linalg.inv(tform.matrixForm(deltaP)))
-
-    return tform.vectorForm(T)
+    return tform.vector(
+        np.dot(tform.matrix(p), np.linalg.inv(tform.matrix(deltaP)))
+        )
 
 
 inverseCompositional = Method(
