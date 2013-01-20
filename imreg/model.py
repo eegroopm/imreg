@@ -189,7 +189,7 @@ class Homography(object):
 
     @property
     def identity(self):
-        return np.zeros(9)
+        return np.zeros(8)
 
     def matrix(self, p):
         return np.array([
@@ -226,4 +226,29 @@ class Homography(object):
         Evaluates the derivative of deformation model with respect to the
         coordinates.
         """
-        raise NotImplementedError('Needs work here!')
+        x, y = coords.xy
+
+        p0, p1, p2, p3, p4, p5, p6, p7 = p
+
+        dx = np.zeros((x.size, 8))
+        dy = np.zeros((x.size, 8))
+
+        dx[:, 0] = x/(p2*x + p5*y + 1.0)
+        dx[:, 1] = 0.0
+        dx[:, 2] = -x*(p3*y + 1.0*p6 + x*(p0 + 1))/(p2*x + p5*y + 1.0)**2
+        dx[:, 3] = y/(p2*x + p5*y + 1.0)
+        dx[:, 4] = 0.0
+        dx[:, 5] = -y*(p3*y + 1.0*p6 + x*(p0 + 1))/(p2*x + p5*y + 1.0)**2
+        dx[:, 6] = 1.0/(p2*x + p5*y + 1.0)
+        dx[:, 7] = 0.0
+
+        dy[:, 0] = 0.0
+        dy[:, 1] = x/(p2*x + p5*y + 1.0)
+        dy[:, 2] = -x*(p1*x + 1.0*p7 + y*(p4 + 1))/(p2*x + p5*y + 1.0)**2
+        dy[:, 3] = 0.0
+        dy[:, 4] = y/(p2*x + p5*y + 1.0)
+        dy[:, 5] = -y*(p1*x + 1.0*p7 + y*(p4 + 1))/(p2*x + p5*y + 1.0)**2
+        dy[:, 6] = 0.0
+        dy[:, 7] = 1.0/(p2*x + p5*y + 1.0)
+
+        return (dx, dy)
