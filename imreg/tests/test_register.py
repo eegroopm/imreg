@@ -23,7 +23,7 @@ def pytest_generate_tests(metafunc):
     methods = [
         ('additive', metric.forwardsAdditive),
         ('compositional', metric.forwardsCompositional),
-        #('inverse-compositional', metric.inverseCompositional)
+        ('inverse-compositional', metric.inverseCompositional)
         ]
 
     image = misc.lena()
@@ -77,8 +77,6 @@ def test_shift(image, template, method, p):
     template = register.RegisterData(template)
 
     step, _search = shift.register(image, template, model.Shift(), method=method)
-
-    print step.p
 
     assert np.allclose(p, step.p, atol=0.5), \
         "Estimated p: {} not equal to p: {}".format(
