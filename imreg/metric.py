@@ -3,10 +3,21 @@
 import collections
 
 import numpy as np
+from scipy import ndimage
 
 # Container for registration methods:
 
 Method = collections.namedtuple('method', 'jacobian error update')
+
+
+def gradient(image, variance=0.5):
+    """ Computes the image gradient """
+    grad = np.gradient(image)
+
+    dIx = ndimage.gaussian_filter(grad[1], variance).flatten()
+    dIy = ndimage.gaussian_filter(grad[0], variance).flatten()
+
+    return dIx, dIy
 
 # ==============================================================================
 # Forwards additive:
@@ -34,9 +45,7 @@ def forwardsAdditiveJacobian(image, template, model, p):
             |        p = number of parameters.
     """
 
-    grad = np.gradient(image)
-    dIx = grad[1].flatten()
-    dIy = grad[0].flatten()
+    dIx, dIy = gradient(image)
 
     dPx, dPy = model.jacobian(template.coords, p)
 
@@ -110,9 +119,7 @@ def inverseCompositionalJacobian(image, template, model, p):
             |        p = number of parameters.
     """
 
-    grad = np.gradient(template.data)
-    dIx = grad[1].flatten()
-    dIy = grad[0].flatten()
+    dIx, dIy = gradient(template.data, variance=1.5)
 
     dPx, dPy = model.jacobian(template.coords, p)
 
