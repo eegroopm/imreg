@@ -4,12 +4,12 @@ import numpy as np
 import scipy.ndimage as nd
 
 try:
-    import interpolation
+    from imreg import interpolation
 except ImportError as error:
     # Attempt autocompilation.
     import pyximport
     pyximport.install()
-    import _interpolation as interpolation
+    from imreg import _interpolation as interpolation
 
 
 def nearest(image, warp):
