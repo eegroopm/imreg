@@ -4,9 +4,9 @@ import numpy as np
 
 import logging
 
-import metric
-import model
-import sampler
+from imreg import metric
+from imreg import model
+from imreg import sampler
 
 # Setup a loger.
 log = logging.getLogger('imreg.register')
